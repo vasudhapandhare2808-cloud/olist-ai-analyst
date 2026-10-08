@@ -3,6 +3,7 @@ from src.schema import get_schema
 from src.sql_utils import extract_sql
 from src.safe_sql import run_safe_query, validate_sql
 from pathlib import Path
+from src.result_validator import validate_result
 
 MODEL = "qwen2.5-coder:3b"
 
@@ -176,6 +177,7 @@ if __name__ == "__main__":
         print(corrected_sql)
 
         result = run_safe_query(corrected_sql)
+        validate_result(result)
 
         print("\nResult:\n")
         print(result)

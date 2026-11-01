@@ -62,7 +62,7 @@ def test_total_orders_answer_is_exact():
             "How many orders are there in total?"
         )
 
-    assert answer == "There are 99,441 orders in total."
+    assert answer == "The result for count star() is 99,441."
     mock_chat.assert_called_once()
 
 

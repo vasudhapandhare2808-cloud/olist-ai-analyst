@@ -6,6 +6,7 @@ from src.text_to_sql import generate_valid_sql
 from src.safe_sql import run_safe_query
 from src.result_validator import validate_result
 from src.question_validator import validate_question
+from src.answer_formatter import format_answer
 
 
 MODEL = "llama3.2:3b"
@@ -22,6 +23,18 @@ def run_business_query(question: str) -> str:
         print(sql)
 
         result = run_safe_query(sql)
+
+        # Empty results are valid query outcomes.
+        if result.empty:
+            return json.dumps(
+                {
+                    "success": True,
+                    "sql": sql,
+                    "rows": [],
+                },
+                ensure_ascii=False,
+            )
+
         validate_result(result)
 
         rows = json.loads(result.to_json(orient="records"))
@@ -71,7 +84,7 @@ TOOLS = [
 
 
 def ask_analyst(question: str) -> str:
-    """Validate the question, execute tools, and return a reliable answer."""
+    """Validate a question, execute the query, and format results deterministically."""
 
     is_valid, reason = validate_question(question)
 
@@ -82,12 +95,10 @@ def ask_analyst(question: str) -> str:
         {
             "role": "system",
             "content": (
-                "You are an AI data analyst for the Olist e-commerce "
-                "database. Call run_business_query to answer database "
-                "questions. Do not write SQL yourself. "
-                "Use only successful tool results. Copy numeric values "
-                "exactly as supplied; never invent or alter them. "
-                "Do not claim a query succeeded if it failed."
+                "You are an AI data analyst for the Olist e-commerce database. "
+                "Call run_business_query to answer database questions. "
+                "Do not write SQL yourself. "
+                "Do not invent database results."
             ),
         },
         {
@@ -97,6 +108,7 @@ def ask_analyst(question: str) -> str:
     ]
 
     for round_number in range(MAX_TOOL_ROUNDS):
+
         response = ollama.chat(
             model=MODEL,
             messages=messages,
@@ -112,6 +124,7 @@ def ask_analyst(question: str) -> str:
         messages.append(message)
 
         for tool_call in message.tool_calls:
+
             tool_name = tool_call.function.name
             arguments = tool_call.function.arguments
 
@@ -143,37 +156,21 @@ def ask_analyst(question: str) -> str:
                 json.dumps(tool_result, ensure_ascii=False),
             )
 
-            # Failures are handled directly by Python.
             if not tool_result.get("success"):
                 error = tool_result.get(
                     "error",
                     "Unknown query error.",
                 )
+
                 return f"The query could not be completed. Reason: {error}"
 
-            # Targeted exact answer for the total-order count.
-            sql = tool_result.get("sql", "").strip().rstrip(";").lower()
-            rows = tool_result.get("rows", [])
+            # Python formats every successful database result.
+            rows = tool_result.get("rows")
 
-            if (
-                sql == "select count(*) from olist_orders_dataset"
-                and len(rows) == 1
-                and "count_star()" in rows[0]
-            ):
-                count = rows[0]["count_star()"]
-                return f"There are {count:,} orders in total."
+            if not isinstance(rows, list):
+                return "The query returned an invalid result format."
 
-            # Other successful queries are explained by the language model.
-            messages.append(
-                {
-                    "role": "tool",
-                    "name": tool_name,
-                    "content": json.dumps(
-                        tool_result,
-                        ensure_ascii=False,
-                    ),
-                }
-            )
+            return format_answer(rows)
 
     return "The analyst stopped after reaching the maximum tool-call rounds."
 
@@ -187,6 +184,7 @@ def main():
 
     try:
         answer = ask_analyst(question)
+
         print("\n--- ANALYST ANSWER ---")
         print(answer)
 

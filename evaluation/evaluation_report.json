@@ -1,24 +1,27 @@
 {
     "summary": {
-        "total_questions": 15,
-        "sql_generation_successes": 15,
+        "total_questions": 45,
+        "sql_generation_successes": 45,
         "sql_generation_success_rate": 100.0,
-        "execution_successes": 15,
+        "execution_successes": 45,
         "sql_execution_success_rate": 100.0,
-        "correct_results": 15,
+        "correct_results": 45,
         "result_accuracy": 100.0,
-        "average_latency_seconds": 2.305
+        "average_latency_seconds": 0.033,
+        "ordered_comparisons": 20,
+        "unordered_comparisons": 25
     },
     "results": [
         {
             "id": 1,
             "category": "orders",
             "question": "How many orders are there in total?",
-            "generated_sql": "SELECT COUNT(*) FROM olist_orders_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(*) AS total_orders\n            FROM olist_orders_dataset",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 5.649,
+            "latency_seconds": 0.056,
             "actual_result": [
                 [
                     99441
@@ -35,12 +38,29 @@
             "id": 2,
             "category": "orders",
             "question": "How many orders are there in each order status?",
-            "generated_sql": "SELECT order_status, COUNT(*) AS order_count\nFROM olist_orders_dataset\nGROUP BY order_status;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT order_status, COUNT(*) AS order_count\n            FROM olist_orders_dataset\n            GROUP BY order_status\n            ORDER BY order_count DESC",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.241,
+            "latency_seconds": 0.023,
             "actual_result": [
+                [
+                    "delivered",
+                    96478
+                ],
+                [
+                    "shipped",
+                    1107
+                ],
+                [
+                    "canceled",
+                    625
+                ],
+                [
+                    "unavailable",
+                    609
+                ],
                 [
                     "invoiced",
                     314
@@ -50,24 +70,8 @@
                     301
                 ],
                 [
-                    "canceled",
-                    625
-                ],
-                [
-                    "shipped",
-                    1107
-                ],
-                [
-                    "delivered",
-                    96478
-                ],
-                [
                     "created",
                     5
-                ],
-                [
-                    "unavailable",
-                    609
                 ],
                 [
                     "approved",
@@ -114,14 +118,15 @@
             "id": 3,
             "category": "orders",
             "question": "What is the percentage of orders that were delivered?",
-            "generated_sql": "SELECT CAST(COUNT(CASE WHEN order_delivered_customer_date IS NOT NULL THEN 1 ELSE NULL END) AS REAL) * 100 / COUNT(*) FROM olist_orders_dataset",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(\n                100.0 * COUNT(*) /\n                (SELECT COUNT(*) FROM olist_orders_dataset), 2\n            ) AS delivered_percentage\n            FROM olist_orders_dataset\n            WHERE order_status = 'delivered'",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.996,
+            "latency_seconds": 0.022,
             "actual_result": [
                 [
-                    97.0183334350586
+                    97.02
                 ]
             ],
             "expected_result": [
@@ -135,11 +140,12 @@
             "id": 4,
             "category": "customers",
             "question": "How many unique customers are there?",
-            "generated_sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customer_count FROM olist_customers_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(DISTINCT customer_unique_id)\n            AS unique_customers\n            FROM olist_customers_dataset",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.397,
+            "latency_seconds": 0.031,
             "actual_result": [
                 [
                     96096
@@ -156,11 +162,12 @@
             "id": 5,
             "category": "customers",
             "question": "Which five customer cities have the most customers?",
-            "generated_sql": "SELECT\n                customer_city,\n                COUNT(*) AS customer_count\n            FROM olist_customers_dataset\n            GROUP BY customer_city\n            ORDER BY customer_count DESC\n            LIMIT 5",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT customer_city, COUNT(*) AS customer_count\n            FROM olist_customers_dataset\n            GROUP BY customer_city\n            ORDER BY customer_count DESC\n            LIMIT 5",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.023,
+            "latency_seconds": 0.019,
             "actual_result": [
                 [
                     "sao paulo",
@@ -211,11 +218,12 @@
             "id": 6,
             "category": "products",
             "question": "What are the top five product categories by items sold?",
-            "generated_sql": "SELECT \n    pc.product_category_name_english AS category,\n    COUNT(*) AS item_count\nFROM \n    olist_order_items_dataset oi\nJOIN \n    olist_products_dataset p ON oi.product_id = p.product_id\nJOIN \n    product_category_name_translation pc ON p.product_category_name = pc.product_category_name\nGROUP BY \n    pc.product_category_name_english\nORDER BY \n    item_count DESC\nLIMIT 5;",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                t.product_category_name_english AS category,\n                COUNT(*) AS items_sold\n            FROM olist_order_items_dataset i\n            JOIN olist_products_dataset p\n                ON i.product_id = p.product_id\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            GROUP BY category\n            ORDER BY items_sold DESC\n            LIMIT 5",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 5.933,
+            "latency_seconds": 0.046,
             "actual_result": [
                 [
                     "bed_bath_table",
@@ -266,11 +274,12 @@
             "id": 7,
             "category": "products",
             "question": "How many different products are listed in the products table?",
-            "generated_sql": "SELECT COUNT(DISTINCT product_id) AS product_count FROM olist_products_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(DISTINCT product_id) AS total_products\n            FROM olist_products_dataset",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.648,
+            "latency_seconds": 0.02,
             "actual_result": [
                 [
                     32951
@@ -287,11 +296,12 @@
             "id": 8,
             "category": "products",
             "question": "Which five product categories have the highest average product weight?",
-            "generated_sql": "SELECT \n    pc.product_category_name_english AS category,\n    AVG(p.product_weight_g) AS average_weight\nFROM \n    olist_products_dataset p\nJOIN \n    product_category_name_translation pc ON p.product_category_name = pc.product_category_name\nWHERE \n    p.product_weight_g IS NOT NULL\nGROUP BY \n    pc.product_category_name_english\nORDER BY \n    average_weight DESC\nLIMIT 5;",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                t.product_category_name_english AS category,\n                ROUND(AVG(p.product_weight_g), 2) AS average_weight_g\n            FROM olist_products_dataset p\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            WHERE p.product_weight_g IS NOT NULL\n            GROUP BY category\n            ORDER BY average_weight_g DESC\n            LIMIT 5",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 5.875,
+            "latency_seconds": 0.023,
             "actual_result": [
                 [
                     "furniture_mattress_and_upholstery",
@@ -299,19 +309,19 @@
                 ],
                 [
                     "office_furniture",
-                    12740.867313915858
+                    12740.87
                 ],
                 [
                     "kitchen_dining_laundry_garden_furniture",
-                    11598.563829787234
+                    11598.56
                 ],
                 [
                     "furniture_bedroom",
-                    9997.222222222223
+                    9997.22
                 ],
                 [
                     "home_appliances_2",
-                    9913.333333333334
+                    9913.33
                 ]
             ],
             "expected_result": [
@@ -342,14 +352,15 @@
             "id": 9,
             "category": "payments",
             "question": "What is the average payment value?",
-            "generated_sql": "SELECT AVG(payment_value) FROM olist_order_payments_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(AVG(payment_value), 2)\n            AS average_payment_value\n            FROM olist_order_payments_dataset",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.251,
+            "latency_seconds": 0.016,
             "actual_result": [
                 [
-                    154.10038041698365
+                    154.1
                 ]
             ],
             "expected_result": [
@@ -363,12 +374,17 @@
             "id": 10,
             "category": "payments",
             "question": "How many payments were made using each payment type?",
-            "generated_sql": "SELECT payment_type, COUNT(*) AS payment_count\nFROM olist_order_payments_dataset\nGROUP BY payment_type;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT payment_type, COUNT(*) AS payment_count\n            FROM olist_order_payments_dataset\n            GROUP BY payment_type\n            ORDER BY payment_count DESC",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.854,
+            "latency_seconds": 0.02,
             "actual_result": [
+                [
+                    "credit_card",
+                    76795
+                ],
                 [
                     "boleto",
                     19784
@@ -384,10 +400,6 @@
                 [
                     "not_defined",
                     3
-                ],
-                [
-                    "credit_card",
-                    76795
                 ]
             ],
             "expected_result": [
@@ -418,14 +430,15 @@
             "id": 11,
             "category": "delivery",
             "question": "What is the average delivery time in days?",
-            "generated_sql": "SELECT AVG(DATEDIFF('day', order_purchase_timestamp, order_delivered_customer_date)) AS average_delivery_time_days\nFROM olist_orders_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(\n                AVG(DATE_DIFF(\n                    'day',\n                    order_purchase_timestamp,\n                    order_delivered_customer_date\n                )), 2\n            ) AS avg_delivery_days\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NOT NULL",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 2.326,
+            "latency_seconds": 0.021,
             "actual_result": [
                 [
-                    12.497336125046644
+                    12.5
                 ]
             ],
             "expected_result": [
@@ -439,14 +452,15 @@
             "id": 12,
             "category": "delivery",
             "question": "What percentage of delivered orders arrived late?",
-            "generated_sql": "SELECT\n                100.0 * SUM(\n                    CASE\n                        WHEN order_delivered_customer_date >\n                             order_estimated_delivery_date\n                        THEN 1\n                        ELSE 0\n                    END\n                ) / COUNT(*) AS late_delivery_percentage\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NOT NULL\n              AND order_estimated_delivery_date IS NOT NULL",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(\n                100.0 * AVG(\n                    CASE\n                        WHEN order_delivered_customer_date >\n                             order_estimated_delivery_date\n                        THEN 1\n                        ELSE 0\n                    END\n                ), 2\n            ) AS late_delivery_percentage\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NOT NULL",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.026,
+            "latency_seconds": 0.018,
             "actual_result": [
                 [
-                    8.112898544715785
+                    8.11
                 ]
             ],
             "expected_result": [
@@ -460,11 +474,12 @@
             "id": 13,
             "category": "delivery",
             "question": "How many orders have not been delivered yet?",
-            "generated_sql": "SELECT COUNT(*) AS undelivered_orders\nFROM olist_orders_dataset\nWHERE order_delivered_customer_date IS NULL;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(*) AS undelivered_orders\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NULL",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.955,
+            "latency_seconds": 0.016,
             "actual_result": [
                 [
                     2965
@@ -481,14 +496,15 @@
             "id": 14,
             "category": "reviews",
             "question": "What is the average customer review score?",
-            "generated_sql": "SELECT AVG(review_score) FROM olist_order_reviews_dataset;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(AVG(review_score), 2)\n            AS average_review_score\n            FROM olist_order_reviews_dataset",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 1.239,
+            "latency_seconds": 0.016,
             "actual_result": [
                 [
-                    4.08642062404257
+                    4.09
                 ]
             ],
             "expected_result": [
@@ -502,11 +518,12 @@
             "id": 15,
             "category": "reviews",
             "question": "How many reviews were given for each review score?",
-            "generated_sql": "SELECT review_score, COUNT(*) AS review_count\nFROM olist_order_reviews_dataset\nGROUP BY review_score\nORDER BY review_score DESC;",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT review_score, COUNT(*) AS review_count\n            FROM olist_order_reviews_dataset\n            GROUP BY review_score\n            ORDER BY review_score DESC",
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 2.163,
+            "latency_seconds": 0.018,
             "actual_result": [
                 [
                     5,
@@ -549,6 +566,3400 @@
                 {
                     "review_score": 1,
                     "review_count": 11424
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 16,
+            "category": "orders",
+            "question": "How many orders were placed each month?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                STRFTIME(order_purchase_timestamp, '%Y-%m')\n                    AS order_month,\n                COUNT(*) AS order_count\n            FROM olist_orders_dataset\n            GROUP BY order_month\n            ORDER BY order_month",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.027,
+            "actual_result": [
+                [
+                    "2016-09",
+                    4
+                ],
+                [
+                    "2016-10",
+                    324
+                ],
+                [
+                    "2016-12",
+                    1
+                ],
+                [
+                    "2017-01",
+                    800
+                ],
+                [
+                    "2017-02",
+                    1780
+                ],
+                [
+                    "2017-03",
+                    2682
+                ],
+                [
+                    "2017-04",
+                    2404
+                ],
+                [
+                    "2017-05",
+                    3700
+                ],
+                [
+                    "2017-06",
+                    3245
+                ],
+                [
+                    "2017-07",
+                    4026
+                ],
+                [
+                    "2017-08",
+                    4331
+                ],
+                [
+                    "2017-09",
+                    4285
+                ],
+                [
+                    "2017-10",
+                    4631
+                ],
+                [
+                    "2017-11",
+                    7544
+                ],
+                [
+                    "2017-12",
+                    5673
+                ],
+                [
+                    "2018-01",
+                    7269
+                ],
+                [
+                    "2018-02",
+                    6728
+                ],
+                [
+                    "2018-03",
+                    7211
+                ],
+                [
+                    "2018-04",
+                    6939
+                ],
+                [
+                    "2018-05",
+                    6873
+                ],
+                [
+                    "2018-06",
+                    6167
+                ],
+                [
+                    "2018-07",
+                    6292
+                ],
+                [
+                    "2018-08",
+                    6512
+                ],
+                [
+                    "2018-09",
+                    16
+                ],
+                [
+                    "2018-10",
+                    4
+                ]
+            ],
+            "expected_result": [
+                {
+                    "order_month": "2016-09",
+                    "order_count": 4
+                },
+                {
+                    "order_month": "2016-10",
+                    "order_count": 324
+                },
+                {
+                    "order_month": "2016-12",
+                    "order_count": 1
+                },
+                {
+                    "order_month": "2017-01",
+                    "order_count": 800
+                },
+                {
+                    "order_month": "2017-02",
+                    "order_count": 1780
+                },
+                {
+                    "order_month": "2017-03",
+                    "order_count": 2682
+                },
+                {
+                    "order_month": "2017-04",
+                    "order_count": 2404
+                },
+                {
+                    "order_month": "2017-05",
+                    "order_count": 3700
+                },
+                {
+                    "order_month": "2017-06",
+                    "order_count": 3245
+                },
+                {
+                    "order_month": "2017-07",
+                    "order_count": 4026
+                },
+                {
+                    "order_month": "2017-08",
+                    "order_count": 4331
+                },
+                {
+                    "order_month": "2017-09",
+                    "order_count": 4285
+                },
+                {
+                    "order_month": "2017-10",
+                    "order_count": 4631
+                },
+                {
+                    "order_month": "2017-11",
+                    "order_count": 7544
+                },
+                {
+                    "order_month": "2017-12",
+                    "order_count": 5673
+                },
+                {
+                    "order_month": "2018-01",
+                    "order_count": 7269
+                },
+                {
+                    "order_month": "2018-02",
+                    "order_count": 6728
+                },
+                {
+                    "order_month": "2018-03",
+                    "order_count": 7211
+                },
+                {
+                    "order_month": "2018-04",
+                    "order_count": 6939
+                },
+                {
+                    "order_month": "2018-05",
+                    "order_count": 6873
+                },
+                {
+                    "order_month": "2018-06",
+                    "order_count": 6167
+                },
+                {
+                    "order_month": "2018-07",
+                    "order_count": 6292
+                },
+                {
+                    "order_month": "2018-08",
+                    "order_count": 6512
+                },
+                {
+                    "order_month": "2018-09",
+                    "order_count": 16
+                },
+                {
+                    "order_month": "2018-10",
+                    "order_count": 4
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 17,
+            "category": "orders",
+            "question": "What is the average number of items per order?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT AVG(item_count) AS average_items_per_order\n            FROM (\n                SELECT order_id, COUNT(*) AS item_count\n                FROM olist_order_items_dataset\n                GROUP BY order_id\n            ) order_items",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.031,
+            "actual_result": [
+                [
+                    1.1417306873695092
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_items_per_order": 1.1417306873695092
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 18,
+            "category": "orders",
+            "question": "What percentage of all orders were canceled?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(\n                100.0 * COUNT(*) /\n                (SELECT COUNT(*) FROM olist_orders_dataset), 2\n            ) AS canceled_percentage\n            FROM olist_orders_dataset\n            WHERE order_status = 'canceled'",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.016,
+            "actual_result": [
+                [
+                    0.63
+                ]
+            ],
+            "expected_result": [
+                {
+                    "canceled_percentage": 0.63
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 19,
+            "category": "orders",
+            "question": "How many orders were placed for each order status in each year?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                YEAR(order_purchase_timestamp) AS order_year,\n                order_status,\n                COUNT(*) AS order_count\n            FROM olist_orders_dataset\n            GROUP BY order_year, order_status\n            ORDER BY order_year, order_status",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.021,
+            "actual_result": [
+                [
+                    2016,
+                    "canceled",
+                    26
+                ],
+                [
+                    2016,
+                    "delivered",
+                    267
+                ],
+                [
+                    2016,
+                    "invoiced",
+                    18
+                ],
+                [
+                    2016,
+                    "processing",
+                    2
+                ],
+                [
+                    2016,
+                    "shipped",
+                    9
+                ],
+                [
+                    2016,
+                    "unavailable",
+                    7
+                ],
+                [
+                    2017,
+                    "approved",
+                    2
+                ],
+                [
+                    2017,
+                    "canceled",
+                    265
+                ],
+                [
+                    2017,
+                    "created",
+                    4
+                ],
+                [
+                    2017,
+                    "delivered",
+                    43428
+                ],
+                [
+                    2017,
+                    "invoiced",
+                    175
+                ],
+                [
+                    2017,
+                    "processing",
+                    240
+                ],
+                [
+                    2017,
+                    "shipped",
+                    530
+                ],
+                [
+                    2017,
+                    "unavailable",
+                    457
+                ],
+                [
+                    2018,
+                    "canceled",
+                    334
+                ],
+                [
+                    2018,
+                    "created",
+                    1
+                ],
+                [
+                    2018,
+                    "delivered",
+                    52783
+                ],
+                [
+                    2018,
+                    "invoiced",
+                    121
+                ],
+                [
+                    2018,
+                    "processing",
+                    59
+                ],
+                [
+                    2018,
+                    "shipped",
+                    568
+                ],
+                [
+                    2018,
+                    "unavailable",
+                    145
+                ]
+            ],
+            "expected_result": [
+                {
+                    "order_year": 2016,
+                    "order_status": "canceled",
+                    "order_count": 26
+                },
+                {
+                    "order_year": 2016,
+                    "order_status": "delivered",
+                    "order_count": 267
+                },
+                {
+                    "order_year": 2016,
+                    "order_status": "invoiced",
+                    "order_count": 18
+                },
+                {
+                    "order_year": 2016,
+                    "order_status": "processing",
+                    "order_count": 2
+                },
+                {
+                    "order_year": 2016,
+                    "order_status": "shipped",
+                    "order_count": 9
+                },
+                {
+                    "order_year": 2016,
+                    "order_status": "unavailable",
+                    "order_count": 7
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "approved",
+                    "order_count": 2
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "canceled",
+                    "order_count": 265
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "created",
+                    "order_count": 4
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "delivered",
+                    "order_count": 43428
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "invoiced",
+                    "order_count": 175
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "processing",
+                    "order_count": 240
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "shipped",
+                    "order_count": 530
+                },
+                {
+                    "order_year": 2017,
+                    "order_status": "unavailable",
+                    "order_count": 457
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "canceled",
+                    "order_count": 334
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "created",
+                    "order_count": 1
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "delivered",
+                    "order_count": 52783
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "invoiced",
+                    "order_count": 121
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "processing",
+                    "order_count": 59
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "shipped",
+                    "order_count": 568
+                },
+                {
+                    "order_year": 2018,
+                    "order_status": "unavailable",
+                    "order_count": 145
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 20,
+            "category": "orders",
+            "question": "Which ten customer states have the highest number of orders?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                c.customer_state,\n                COUNT(*) AS order_count\n            FROM olist_orders_dataset o\n            JOIN olist_customers_dataset c\n                ON o.customer_id = c.customer_id\n            GROUP BY c.customer_state\n            ORDER BY order_count DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.041,
+            "actual_result": [
+                [
+                    "SP",
+                    41746
+                ],
+                [
+                    "RJ",
+                    12852
+                ],
+                [
+                    "MG",
+                    11635
+                ],
+                [
+                    "RS",
+                    5466
+                ],
+                [
+                    "PR",
+                    5045
+                ],
+                [
+                    "SC",
+                    3637
+                ],
+                [
+                    "BA",
+                    3380
+                ],
+                [
+                    "DF",
+                    2140
+                ],
+                [
+                    "ES",
+                    2033
+                ],
+                [
+                    "GO",
+                    2020
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "SP",
+                    "order_count": 41746
+                },
+                {
+                    "customer_state": "RJ",
+                    "order_count": 12852
+                },
+                {
+                    "customer_state": "MG",
+                    "order_count": 11635
+                },
+                {
+                    "customer_state": "RS",
+                    "order_count": 5466
+                },
+                {
+                    "customer_state": "PR",
+                    "order_count": 5045
+                },
+                {
+                    "customer_state": "SC",
+                    "order_count": 3637
+                },
+                {
+                    "customer_state": "BA",
+                    "order_count": 3380
+                },
+                {
+                    "customer_state": "DF",
+                    "order_count": 2140
+                },
+                {
+                    "customer_state": "ES",
+                    "order_count": 2033
+                },
+                {
+                    "customer_state": "GO",
+                    "order_count": 2020
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 21,
+            "category": "customers",
+            "question": "How many customers have placed more than one order?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(*) AS repeat_customers\n            FROM (\n                SELECT c.customer_unique_id\n                FROM olist_orders_dataset o\n                JOIN olist_customers_dataset c\n                    ON o.customer_id = c.customer_id\n                GROUP BY c.customer_unique_id\n                HAVING COUNT(DISTINCT o.order_id) > 1\n            ) repeat_customer_list",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.07,
+            "actual_result": [
+                [
+                    2997
+                ]
+            ],
+            "expected_result": [
+                {
+                    "repeat_customers": 2997
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 22,
+            "category": "customers",
+            "question": "What is the average number of orders per unique customer?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT AVG(order_count)\n                AS average_orders_per_customer\n            FROM (\n                SELECT\n                    c.customer_unique_id,\n                    COUNT(DISTINCT o.order_id) AS order_count\n                FROM olist_customers_dataset c\n                JOIN olist_orders_dataset o\n                    ON c.customer_id = o.customer_id\n                GROUP BY c.customer_unique_id\n            ) customer_orders",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.064,
+            "actual_result": [
+                [
+                    1.0348089410589412
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_orders_per_customer": 1.0348089410589412
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 23,
+            "category": "customers",
+            "question": "Which ten customer cities have the highest number of unique customers?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                customer_city,\n                COUNT(DISTINCT customer_unique_id) AS unique_customers\n            FROM olist_customers_dataset\n            GROUP BY customer_city\n            ORDER BY unique_customers DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.034,
+            "actual_result": [
+                [
+                    "sao paulo",
+                    14984
+                ],
+                [
+                    "rio de janeiro",
+                    6620
+                ],
+                [
+                    "belo horizonte",
+                    2672
+                ],
+                [
+                    "brasilia",
+                    2069
+                ],
+                [
+                    "curitiba",
+                    1465
+                ],
+                [
+                    "campinas",
+                    1398
+                ],
+                [
+                    "porto alegre",
+                    1326
+                ],
+                [
+                    "salvador",
+                    1209
+                ],
+                [
+                    "guarulhos",
+                    1153
+                ],
+                [
+                    "sao bernardo do campo",
+                    908
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_city": "sao paulo",
+                    "unique_customers": 14984
+                },
+                {
+                    "customer_city": "rio de janeiro",
+                    "unique_customers": 6620
+                },
+                {
+                    "customer_city": "belo horizonte",
+                    "unique_customers": 2672
+                },
+                {
+                    "customer_city": "brasilia",
+                    "unique_customers": 2069
+                },
+                {
+                    "customer_city": "curitiba",
+                    "unique_customers": 1465
+                },
+                {
+                    "customer_city": "campinas",
+                    "unique_customers": 1398
+                },
+                {
+                    "customer_city": "porto alegre",
+                    "unique_customers": 1326
+                },
+                {
+                    "customer_city": "salvador",
+                    "unique_customers": 1209
+                },
+                {
+                    "customer_city": "guarulhos",
+                    "unique_customers": 1153
+                },
+                {
+                    "customer_city": "sao bernardo do campo",
+                    "unique_customers": 908
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 24,
+            "category": "customers",
+            "question": "How many unique customers are there in each state?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT\n                customer_state,\n                COUNT(DISTINCT customer_unique_id) AS unique_customers\n            FROM olist_customers_dataset\n            GROUP BY customer_state\n            ORDER BY unique_customers DESC",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.031,
+            "actual_result": [
+                [
+                    "SP",
+                    40302
+                ],
+                [
+                    "RJ",
+                    12384
+                ],
+                [
+                    "MG",
+                    11259
+                ],
+                [
+                    "RS",
+                    5277
+                ],
+                [
+                    "PR",
+                    4882
+                ],
+                [
+                    "SC",
+                    3534
+                ],
+                [
+                    "BA",
+                    3277
+                ],
+                [
+                    "DF",
+                    2075
+                ],
+                [
+                    "ES",
+                    1964
+                ],
+                [
+                    "GO",
+                    1952
+                ],
+                [
+                    "PE",
+                    1609
+                ],
+                [
+                    "CE",
+                    1313
+                ],
+                [
+                    "PA",
+                    949
+                ],
+                [
+                    "MT",
+                    876
+                ],
+                [
+                    "MA",
+                    726
+                ],
+                [
+                    "MS",
+                    694
+                ],
+                [
+                    "PB",
+                    519
+                ],
+                [
+                    "PI",
+                    482
+                ],
+                [
+                    "RN",
+                    474
+                ],
+                [
+                    "AL",
+                    401
+                ],
+                [
+                    "SE",
+                    342
+                ],
+                [
+                    "TO",
+                    273
+                ],
+                [
+                    "RO",
+                    240
+                ],
+                [
+                    "AM",
+                    143
+                ],
+                [
+                    "AC",
+                    77
+                ],
+                [
+                    "AP",
+                    67
+                ],
+                [
+                    "RR",
+                    45
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "SP",
+                    "unique_customers": 40302
+                },
+                {
+                    "customer_state": "RJ",
+                    "unique_customers": 12384
+                },
+                {
+                    "customer_state": "MG",
+                    "unique_customers": 11259
+                },
+                {
+                    "customer_state": "RS",
+                    "unique_customers": 5277
+                },
+                {
+                    "customer_state": "PR",
+                    "unique_customers": 4882
+                },
+                {
+                    "customer_state": "SC",
+                    "unique_customers": 3534
+                },
+                {
+                    "customer_state": "BA",
+                    "unique_customers": 3277
+                },
+                {
+                    "customer_state": "DF",
+                    "unique_customers": 2075
+                },
+                {
+                    "customer_state": "ES",
+                    "unique_customers": 1964
+                },
+                {
+                    "customer_state": "GO",
+                    "unique_customers": 1952
+                },
+                {
+                    "customer_state": "PE",
+                    "unique_customers": 1609
+                },
+                {
+                    "customer_state": "CE",
+                    "unique_customers": 1313
+                },
+                {
+                    "customer_state": "PA",
+                    "unique_customers": 949
+                },
+                {
+                    "customer_state": "MT",
+                    "unique_customers": 876
+                },
+                {
+                    "customer_state": "MA",
+                    "unique_customers": 726
+                },
+                {
+                    "customer_state": "MS",
+                    "unique_customers": 694
+                },
+                {
+                    "customer_state": "PB",
+                    "unique_customers": 519
+                },
+                {
+                    "customer_state": "PI",
+                    "unique_customers": 482
+                },
+                {
+                    "customer_state": "RN",
+                    "unique_customers": 474
+                },
+                {
+                    "customer_state": "AL",
+                    "unique_customers": 401
+                },
+                {
+                    "customer_state": "SE",
+                    "unique_customers": 342
+                },
+                {
+                    "customer_state": "TO",
+                    "unique_customers": 273
+                },
+                {
+                    "customer_state": "RO",
+                    "unique_customers": 240
+                },
+                {
+                    "customer_state": "AM",
+                    "unique_customers": 143
+                },
+                {
+                    "customer_state": "AC",
+                    "unique_customers": 77
+                },
+                {
+                    "customer_state": "AP",
+                    "unique_customers": 67
+                },
+                {
+                    "customer_state": "RR",
+                    "unique_customers": 45
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 25,
+            "category": "products",
+            "question": "How many products do not have a product category assigned?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT COUNT(*) AS products_without_category\n            FROM olist_products_dataset\n            WHERE product_category_name IS NULL",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.017,
+            "actual_result": [
+                [
+                    610
+                ]
+            ],
+            "expected_result": [
+                {
+                    "products_without_category": 610
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 26,
+            "category": "products",
+            "question": "Which ten product categories contain the most listed products?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                t.product_category_name_english AS category,\n                COUNT(DISTINCT p.product_id) AS product_count\n            FROM olist_products_dataset p\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            GROUP BY category\n            ORDER BY product_count DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.028,
+            "actual_result": [
+                [
+                    "bed_bath_table",
+                    3029
+                ],
+                [
+                    "sports_leisure",
+                    2867
+                ],
+                [
+                    "furniture_decor",
+                    2657
+                ],
+                [
+                    "health_beauty",
+                    2444
+                ],
+                [
+                    "housewares",
+                    2335
+                ],
+                [
+                    "auto",
+                    1900
+                ],
+                [
+                    "computers_accessories",
+                    1639
+                ],
+                [
+                    "toys",
+                    1411
+                ],
+                [
+                    "watches_gifts",
+                    1329
+                ],
+                [
+                    "telephony",
+                    1134
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "bed_bath_table",
+                    "product_count": 3029
+                },
+                {
+                    "category": "sports_leisure",
+                    "product_count": 2867
+                },
+                {
+                    "category": "furniture_decor",
+                    "product_count": 2657
+                },
+                {
+                    "category": "health_beauty",
+                    "product_count": 2444
+                },
+                {
+                    "category": "housewares",
+                    "product_count": 2335
+                },
+                {
+                    "category": "auto",
+                    "product_count": 1900
+                },
+                {
+                    "category": "computers_accessories",
+                    "product_count": 1639
+                },
+                {
+                    "category": "toys",
+                    "product_count": 1411
+                },
+                {
+                    "category": "watches_gifts",
+                    "product_count": 1329
+                },
+                {
+                    "category": "telephony",
+                    "product_count": 1134
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 27,
+            "category": "products",
+            "question": "What is the average selling price of items in each product category?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                t.product_category_name_english AS category,\n                ROUND(AVG(i.price), 2) AS average_item_price\n            FROM olist_order_items_dataset i\n            JOIN olist_products_dataset p\n                ON i.product_id = p.product_id\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            GROUP BY category\n            ORDER BY average_item_price DESC",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.042,
+            "actual_result": [
+                [
+                    "computers",
+                    1098.34
+                ],
+                [
+                    "small_appliances_home_oven_and_coffee",
+                    624.29
+                ],
+                [
+                    "home_appliances_2",
+                    476.12
+                ],
+                [
+                    "agro_industry_and_commerce",
+                    342.12
+                ],
+                [
+                    "musical_instruments",
+                    281.62
+                ],
+                [
+                    "small_appliances",
+                    280.78
+                ],
+                [
+                    "fixed_telephony",
+                    225.69
+                ],
+                [
+                    "construction_tools_safety",
+                    208.99
+                ],
+                [
+                    "watches_gifts",
+                    201.14
+                ],
+                [
+                    "air_conditioning",
+                    185.27
+                ],
+                [
+                    "furniture_bedroom",
+                    183.75
+                ],
+                [
+                    "cool_stuff",
+                    167.36
+                ],
+                [
+                    "kitchen_dining_laundry_garden_furniture",
+                    164.87
+                ],
+                [
+                    "office_furniture",
+                    162.01
+                ],
+                [
+                    "music",
+                    158.8
+                ],
+                [
+                    "construction_tools_construction",
+                    155.73
+                ],
+                [
+                    "costruction_tools_tools",
+                    154.41
+                ],
+                [
+                    "industry_commerce_and_business",
+                    148.02
+                ],
+                [
+                    "la_cuisine",
+                    146.79
+                ],
+                [
+                    "security_and_services",
+                    141.64
+                ],
+                [
+                    "auto",
+                    139.96
+                ],
+                [
+                    "audio",
+                    139.25
+                ],
+                [
+                    "consoles_games",
+                    138.49
+                ],
+                [
+                    "home_construction",
+                    137.56
+                ],
+                [
+                    "furniture_living_room",
+                    137.01
+                ],
+                [
+                    "construction_tools_lights",
+                    135.13
+                ],
+                [
+                    "home_confort",
+                    134.96
+                ],
+                [
+                    "baby",
+                    134.34
+                ],
+                [
+                    "health_beauty",
+                    130.16
+                ],
+                [
+                    "luggage_accessories",
+                    128.6
+                ],
+                [
+                    "toys",
+                    117.55
+                ],
+                [
+                    "perfumery",
+                    116.74
+                ],
+                [
+                    "computers_accessories",
+                    116.51
+                ],
+                [
+                    "art",
+                    115.8
+                ],
+                [
+                    "furniture_mattress_and_upholstery",
+                    114.95
+                ],
+                [
+                    "sports_leisure",
+                    114.34
+                ],
+                [
+                    "garden_tools",
+                    111.63
+                ],
+                [
+                    "pet_shop",
+                    110.07
+                ],
+                [
+                    "signaling_and_security",
+                    108.09
+                ],
+                [
+                    "costruction_tools_garden",
+                    108.05
+                ],
+                [
+                    "party_supplies",
+                    104.31
+                ],
+                [
+                    "home_appliances",
+                    103.98
+                ],
+                [
+                    "cine_photo",
+                    96.3
+                ],
+                [
+                    "dvds_blu_ray",
+                    93.74
+                ],
+                [
+                    "bed_bath_table",
+                    93.3
+                ],
+                [
+                    "stationery",
+                    91.75
+                ],
+                [
+                    "market_place",
+                    91.25
+                ],
+                [
+                    "housewares",
+                    90.79
+                ],
+                [
+                    "tablets_printing_image",
+                    90.7
+                ],
+                [
+                    "fashion_shoes",
+                    89.93
+                ],
+                [
+                    "furniture_decor",
+                    87.56
+                ],
+                [
+                    "books_general_interest",
+                    84.73
+                ],
+                [
+                    "fashion_male_clothing",
+                    81.8
+                ],
+                [
+                    "books_imported",
+                    77.33
+                ],
+                [
+                    "arts_and_craftmanship",
+                    75.58
+                ],
+                [
+                    "fashion_bags_accessories",
+                    75.25
+                ],
+                [
+                    "fashion_underwear_beach",
+                    72.84
+                ],
+                [
+                    "books_technical",
+                    71.52
+                ],
+                [
+                    "fashion_childrens_clothes",
+                    71.23
+                ],
+                [
+                    "telephony",
+                    71.21
+                ],
+                [
+                    "fashion_sport",
+                    70.65
+                ],
+                [
+                    "drinks",
+                    59.18
+                ],
+                [
+                    "fashio_female_clothing",
+                    58.41
+                ],
+                [
+                    "electronics",
+                    57.91
+                ],
+                [
+                    "food",
+                    57.63
+                ],
+                [
+                    "christmas_supplies",
+                    57.52
+                ],
+                [
+                    "food_drink",
+                    54.6
+                ],
+                [
+                    "cds_dvds_musicals",
+                    52.14
+                ],
+                [
+                    "diapers_and_hygiene",
+                    40.19
+                ],
+                [
+                    "flowers",
+                    33.64
+                ],
+                [
+                    "home_comfort_2",
+                    25.34
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "computers",
+                    "average_item_price": 1098.34
+                },
+                {
+                    "category": "small_appliances_home_oven_and_coffee",
+                    "average_item_price": 624.29
+                },
+                {
+                    "category": "home_appliances_2",
+                    "average_item_price": 476.12
+                },
+                {
+                    "category": "agro_industry_and_commerce",
+                    "average_item_price": 342.12
+                },
+                {
+                    "category": "musical_instruments",
+                    "average_item_price": 281.62
+                },
+                {
+                    "category": "small_appliances",
+                    "average_item_price": 280.78
+                },
+                {
+                    "category": "fixed_telephony",
+                    "average_item_price": 225.69
+                },
+                {
+                    "category": "construction_tools_safety",
+                    "average_item_price": 208.99
+                },
+                {
+                    "category": "watches_gifts",
+                    "average_item_price": 201.14
+                },
+                {
+                    "category": "air_conditioning",
+                    "average_item_price": 185.27
+                },
+                {
+                    "category": "furniture_bedroom",
+                    "average_item_price": 183.75
+                },
+                {
+                    "category": "cool_stuff",
+                    "average_item_price": 167.36
+                },
+                {
+                    "category": "kitchen_dining_laundry_garden_furniture",
+                    "average_item_price": 164.87
+                },
+                {
+                    "category": "office_furniture",
+                    "average_item_price": 162.01
+                },
+                {
+                    "category": "music",
+                    "average_item_price": 158.8
+                },
+                {
+                    "category": "construction_tools_construction",
+                    "average_item_price": 155.73
+                },
+                {
+                    "category": "costruction_tools_tools",
+                    "average_item_price": 154.41
+                },
+                {
+                    "category": "industry_commerce_and_business",
+                    "average_item_price": 148.02
+                },
+                {
+                    "category": "la_cuisine",
+                    "average_item_price": 146.79
+                },
+                {
+                    "category": "security_and_services",
+                    "average_item_price": 141.64
+                },
+                {
+                    "category": "auto",
+                    "average_item_price": 139.96
+                },
+                {
+                    "category": "audio",
+                    "average_item_price": 139.25
+                },
+                {
+                    "category": "consoles_games",
+                    "average_item_price": 138.49
+                },
+                {
+                    "category": "home_construction",
+                    "average_item_price": 137.56
+                },
+                {
+                    "category": "furniture_living_room",
+                    "average_item_price": 137.01
+                },
+                {
+                    "category": "construction_tools_lights",
+                    "average_item_price": 135.13
+                },
+                {
+                    "category": "home_confort",
+                    "average_item_price": 134.96
+                },
+                {
+                    "category": "baby",
+                    "average_item_price": 134.34
+                },
+                {
+                    "category": "health_beauty",
+                    "average_item_price": 130.16
+                },
+                {
+                    "category": "luggage_accessories",
+                    "average_item_price": 128.6
+                },
+                {
+                    "category": "toys",
+                    "average_item_price": 117.55
+                },
+                {
+                    "category": "perfumery",
+                    "average_item_price": 116.74
+                },
+                {
+                    "category": "computers_accessories",
+                    "average_item_price": 116.51
+                },
+                {
+                    "category": "art",
+                    "average_item_price": 115.8
+                },
+                {
+                    "category": "furniture_mattress_and_upholstery",
+                    "average_item_price": 114.95
+                },
+                {
+                    "category": "sports_leisure",
+                    "average_item_price": 114.34
+                },
+                {
+                    "category": "garden_tools",
+                    "average_item_price": 111.63
+                },
+                {
+                    "category": "pet_shop",
+                    "average_item_price": 110.07
+                },
+                {
+                    "category": "signaling_and_security",
+                    "average_item_price": 108.09
+                },
+                {
+                    "category": "costruction_tools_garden",
+                    "average_item_price": 108.05
+                },
+                {
+                    "category": "party_supplies",
+                    "average_item_price": 104.31
+                },
+                {
+                    "category": "home_appliances",
+                    "average_item_price": 103.98
+                },
+                {
+                    "category": "cine_photo",
+                    "average_item_price": 96.3
+                },
+                {
+                    "category": "dvds_blu_ray",
+                    "average_item_price": 93.74
+                },
+                {
+                    "category": "bed_bath_table",
+                    "average_item_price": 93.3
+                },
+                {
+                    "category": "stationery",
+                    "average_item_price": 91.75
+                },
+                {
+                    "category": "market_place",
+                    "average_item_price": 91.25
+                },
+                {
+                    "category": "housewares",
+                    "average_item_price": 90.79
+                },
+                {
+                    "category": "tablets_printing_image",
+                    "average_item_price": 90.7
+                },
+                {
+                    "category": "fashion_shoes",
+                    "average_item_price": 89.93
+                },
+                {
+                    "category": "furniture_decor",
+                    "average_item_price": 87.56
+                },
+                {
+                    "category": "books_general_interest",
+                    "average_item_price": 84.73
+                },
+                {
+                    "category": "fashion_male_clothing",
+                    "average_item_price": 81.8
+                },
+                {
+                    "category": "books_imported",
+                    "average_item_price": 77.33
+                },
+                {
+                    "category": "arts_and_craftmanship",
+                    "average_item_price": 75.58
+                },
+                {
+                    "category": "fashion_bags_accessories",
+                    "average_item_price": 75.25
+                },
+                {
+                    "category": "fashion_underwear_beach",
+                    "average_item_price": 72.84
+                },
+                {
+                    "category": "books_technical",
+                    "average_item_price": 71.52
+                },
+                {
+                    "category": "fashion_childrens_clothes",
+                    "average_item_price": 71.23
+                },
+                {
+                    "category": "telephony",
+                    "average_item_price": 71.21
+                },
+                {
+                    "category": "fashion_sport",
+                    "average_item_price": 70.65
+                },
+                {
+                    "category": "drinks",
+                    "average_item_price": 59.18
+                },
+                {
+                    "category": "fashio_female_clothing",
+                    "average_item_price": 58.41
+                },
+                {
+                    "category": "electronics",
+                    "average_item_price": 57.91
+                },
+                {
+                    "category": "food",
+                    "average_item_price": 57.63
+                },
+                {
+                    "category": "christmas_supplies",
+                    "average_item_price": 57.52
+                },
+                {
+                    "category": "food_drink",
+                    "average_item_price": 54.6
+                },
+                {
+                    "category": "cds_dvds_musicals",
+                    "average_item_price": 52.14
+                },
+                {
+                    "category": "diapers_and_hygiene",
+                    "average_item_price": 40.19
+                },
+                {
+                    "category": "flowers",
+                    "average_item_price": 33.64
+                },
+                {
+                    "category": "home_comfort_2",
+                    "average_item_price": 25.34
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 28,
+            "category": "sales",
+            "question": "What is the total revenue generated from product item prices?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(SUM(price), 2) AS total_product_revenue\n            FROM olist_order_items_dataset",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.016,
+            "actual_result": [
+                [
+                    13591643.7
+                ]
+            ],
+            "expected_result": [
+                {
+                    "total_product_revenue": 13591643.7
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 29,
+            "category": "sales",
+            "question": "What was the monthly product revenue from delivered orders?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                STRFTIME(o.order_purchase_timestamp, '%Y-%m')\n                    AS order_month,\n                ROUND(SUM(i.price), 2) AS monthly_revenue\n            FROM olist_orders_dataset o\n            JOIN olist_order_items_dataset i\n                ON o.order_id = i.order_id\n            WHERE o.order_status = 'delivered'\n            GROUP BY order_month\n            ORDER BY order_month",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.053,
+            "actual_result": [
+                [
+                    "2016-09",
+                    134.97
+                ],
+                [
+                    "2016-10",
+                    40325.11
+                ],
+                [
+                    "2016-12",
+                    10.9
+                ],
+                [
+                    "2017-01",
+                    111798.36
+                ],
+                [
+                    "2017-02",
+                    234223.4
+                ],
+                [
+                    "2017-03",
+                    359198.85
+                ],
+                [
+                    "2017-04",
+                    340669.68
+                ],
+                [
+                    "2017-05",
+                    489338.25
+                ],
+                [
+                    "2017-06",
+                    421923.37
+                ],
+                [
+                    "2017-07",
+                    481604.52
+                ],
+                [
+                    "2017-08",
+                    554699.7
+                ],
+                [
+                    "2017-09",
+                    607399.67
+                ],
+                [
+                    "2017-10",
+                    648247.65
+                ],
+                [
+                    "2017-11",
+                    987765.37
+                ],
+                [
+                    "2017-12",
+                    726033.19
+                ],
+                [
+                    "2018-01",
+                    924645.0
+                ],
+                [
+                    "2018-02",
+                    826437.13
+                ],
+                [
+                    "2018-03",
+                    953356.25
+                ],
+                [
+                    "2018-04",
+                    973534.09
+                ],
+                [
+                    "2018-05",
+                    977544.69
+                ],
+                [
+                    "2018-06",
+                    856077.86
+                ],
+                [
+                    "2018-07",
+                    867953.46
+                ],
+                [
+                    "2018-08",
+                    838576.64
+                ]
+            ],
+            "expected_result": [
+                {
+                    "order_month": "2016-09",
+                    "monthly_revenue": 134.97
+                },
+                {
+                    "order_month": "2016-10",
+                    "monthly_revenue": 40325.11
+                },
+                {
+                    "order_month": "2016-12",
+                    "monthly_revenue": 10.9
+                },
+                {
+                    "order_month": "2017-01",
+                    "monthly_revenue": 111798.36
+                },
+                {
+                    "order_month": "2017-02",
+                    "monthly_revenue": 234223.4
+                },
+                {
+                    "order_month": "2017-03",
+                    "monthly_revenue": 359198.85
+                },
+                {
+                    "order_month": "2017-04",
+                    "monthly_revenue": 340669.68
+                },
+                {
+                    "order_month": "2017-05",
+                    "monthly_revenue": 489338.25
+                },
+                {
+                    "order_month": "2017-06",
+                    "monthly_revenue": 421923.37
+                },
+                {
+                    "order_month": "2017-07",
+                    "monthly_revenue": 481604.52
+                },
+                {
+                    "order_month": "2017-08",
+                    "monthly_revenue": 554699.7
+                },
+                {
+                    "order_month": "2017-09",
+                    "monthly_revenue": 607399.67
+                },
+                {
+                    "order_month": "2017-10",
+                    "monthly_revenue": 648247.65
+                },
+                {
+                    "order_month": "2017-11",
+                    "monthly_revenue": 987765.37
+                },
+                {
+                    "order_month": "2017-12",
+                    "monthly_revenue": 726033.19
+                },
+                {
+                    "order_month": "2018-01",
+                    "monthly_revenue": 924645.0
+                },
+                {
+                    "order_month": "2018-02",
+                    "monthly_revenue": 826437.13
+                },
+                {
+                    "order_month": "2018-03",
+                    "monthly_revenue": 953356.25
+                },
+                {
+                    "order_month": "2018-04",
+                    "monthly_revenue": 973534.09
+                },
+                {
+                    "order_month": "2018-05",
+                    "monthly_revenue": 977544.69
+                },
+                {
+                    "order_month": "2018-06",
+                    "monthly_revenue": 856077.86
+                },
+                {
+                    "order_month": "2018-07",
+                    "monthly_revenue": 867953.46
+                },
+                {
+                    "order_month": "2018-08",
+                    "monthly_revenue": 838576.64
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 30,
+            "category": "sales",
+            "question": "Which ten product categories generated the highest product revenue?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                t.product_category_name_english AS category,\n                ROUND(SUM(i.price), 2) AS total_revenue\n            FROM olist_order_items_dataset i\n            JOIN olist_products_dataset p\n                ON i.product_id = p.product_id\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            GROUP BY category\n            ORDER BY total_revenue DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.041,
+            "actual_result": [
+                [
+                    "health_beauty",
+                    1258681.34
+                ],
+                [
+                    "watches_gifts",
+                    1205005.68
+                ],
+                [
+                    "bed_bath_table",
+                    1036988.68
+                ],
+                [
+                    "sports_leisure",
+                    988048.97
+                ],
+                [
+                    "computers_accessories",
+                    911954.32
+                ],
+                [
+                    "furniture_decor",
+                    729762.49
+                ],
+                [
+                    "cool_stuff",
+                    635290.85
+                ],
+                [
+                    "housewares",
+                    632248.66
+                ],
+                [
+                    "auto",
+                    592720.11
+                ],
+                [
+                    "garden_tools",
+                    485256.46
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "health_beauty",
+                    "total_revenue": 1258681.34
+                },
+                {
+                    "category": "watches_gifts",
+                    "total_revenue": 1205005.68
+                },
+                {
+                    "category": "bed_bath_table",
+                    "total_revenue": 1036988.68
+                },
+                {
+                    "category": "sports_leisure",
+                    "total_revenue": 988048.97
+                },
+                {
+                    "category": "computers_accessories",
+                    "total_revenue": 911954.32
+                },
+                {
+                    "category": "furniture_decor",
+                    "total_revenue": 729762.49
+                },
+                {
+                    "category": "cool_stuff",
+                    "total_revenue": 635290.85
+                },
+                {
+                    "category": "housewares",
+                    "total_revenue": 632248.66
+                },
+                {
+                    "category": "auto",
+                    "total_revenue": 592720.11
+                },
+                {
+                    "category": "garden_tools",
+                    "total_revenue": 485256.46
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 31,
+            "category": "sales",
+            "question": "What is the average product revenue per order?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(AVG(order_revenue), 2)\n                AS average_order_value\n            FROM (\n                SELECT order_id, SUM(price) AS order_revenue\n                FROM olist_order_items_dataset\n                GROUP BY order_id\n            ) order_totals",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.032,
+            "actual_result": [
+                [
+                    137.75
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_order_value": 137.75
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 32,
+            "category": "sales",
+            "question": "Which ten sellers generated the highest product revenue?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                i.seller_id,\n                ROUND(SUM(i.price), 2) AS total_revenue\n            FROM olist_order_items_dataset i\n            GROUP BY i.seller_id\n            ORDER BY total_revenue DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.018,
+            "actual_result": [
+                [
+                    "4869f7a5dfa277a7dca6462dcf3b52b2",
+                    229472.63
+                ],
+                [
+                    "53243585a1d6dc2643021fd1853d8905",
+                    222776.05
+                ],
+                [
+                    "4a3ca9315b744ce9f8e9374361493884",
+                    200472.92
+                ],
+                [
+                    "fa1c13f2614d7b5c4749cbc52fecda94",
+                    194042.03
+                ],
+                [
+                    "7c67e1448b00f6e969d365cea6b010ab",
+                    187923.89
+                ],
+                [
+                    "7e93a43ef30c4f03f38b393420bc753a",
+                    176431.87
+                ],
+                [
+                    "da8622b14eb17ae2831f4ac5b9dab84a",
+                    160236.57
+                ],
+                [
+                    "7a67c85e85bb2ce8582c35f2203ad736",
+                    141745.53
+                ],
+                [
+                    "1025f0e2d44d7041d6cf58b6550e0bfa",
+                    138968.55
+                ],
+                [
+                    "955fee9216a65b617aa5c0531780ce60",
+                    135171.7
+                ]
+            ],
+            "expected_result": [
+                {
+                    "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+                    "total_revenue": 229472.63
+                },
+                {
+                    "seller_id": "53243585a1d6dc2643021fd1853d8905",
+                    "total_revenue": 222776.05
+                },
+                {
+                    "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+                    "total_revenue": 200472.92
+                },
+                {
+                    "seller_id": "fa1c13f2614d7b5c4749cbc52fecda94",
+                    "total_revenue": 194042.03
+                },
+                {
+                    "seller_id": "7c67e1448b00f6e969d365cea6b010ab",
+                    "total_revenue": 187923.89
+                },
+                {
+                    "seller_id": "7e93a43ef30c4f03f38b393420bc753a",
+                    "total_revenue": 176431.87
+                },
+                {
+                    "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a",
+                    "total_revenue": 160236.57
+                },
+                {
+                    "seller_id": "7a67c85e85bb2ce8582c35f2203ad736",
+                    "total_revenue": 141745.53
+                },
+                {
+                    "seller_id": "1025f0e2d44d7041d6cf58b6550e0bfa",
+                    "total_revenue": 138968.55
+                },
+                {
+                    "seller_id": "955fee9216a65b617aa5c0531780ce60",
+                    "total_revenue": 135171.7
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 33,
+            "category": "sales",
+            "question": "How much product revenue was generated in each year?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                YEAR(o.order_purchase_timestamp) AS order_year,\n                ROUND(SUM(i.price), 2) AS annual_revenue\n            FROM olist_orders_dataset o\n            JOIN olist_order_items_dataset i\n                ON o.order_id = i.order_id\n            GROUP BY order_year\n            ORDER BY order_year",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.041,
+            "actual_result": [
+                [
+                    2016,
+                    49785.92
+                ],
+                [
+                    2017,
+                    6155806.98
+                ],
+                [
+                    2018,
+                    7386050.8
+                ]
+            ],
+            "expected_result": [
+                {
+                    "order_year": 2016,
+                    "annual_revenue": 49785.92
+                },
+                {
+                    "order_year": 2017,
+                    "annual_revenue": 6155806.98
+                },
+                {
+                    "order_year": 2018,
+                    "annual_revenue": 7386050.8
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 34,
+            "category": "sales",
+            "question": "What is the total payment value collected through each payment type?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                payment_type,\n                ROUND(SUM(payment_value), 2) AS total_payment_value\n            FROM olist_order_payments_dataset\n            GROUP BY payment_type\n            ORDER BY total_payment_value DESC",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.018,
+            "actual_result": [
+                [
+                    "credit_card",
+                    12542084.19
+                ],
+                [
+                    "boleto",
+                    2869361.27
+                ],
+                [
+                    "voucher",
+                    379436.87
+                ],
+                [
+                    "debit_card",
+                    217989.79
+                ],
+                [
+                    "not_defined",
+                    0.0
+                ]
+            ],
+            "expected_result": [
+                {
+                    "payment_type": "credit_card",
+                    "total_payment_value": 12542084.19
+                },
+                {
+                    "payment_type": "boleto",
+                    "total_payment_value": 2869361.27
+                },
+                {
+                    "payment_type": "voucher",
+                    "total_payment_value": 379436.87
+                },
+                {
+                    "payment_type": "debit_card",
+                    "total_payment_value": 217989.79
+                },
+                {
+                    "payment_type": "not_defined",
+                    "total_payment_value": 0.0
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 35,
+            "category": "sales",
+            "question": "Which ten customer states generated the highest product revenue?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                c.customer_state,\n                ROUND(SUM(i.price), 2) AS total_revenue\n            FROM olist_orders_dataset o\n            JOIN olist_customers_dataset c\n                ON o.customer_id = c.customer_id\n            JOIN olist_order_items_dataset i\n                ON o.order_id = i.order_id\n            GROUP BY c.customer_state\n            ORDER BY total_revenue DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.07,
+            "actual_result": [
+                [
+                    "SP",
+                    5202955.05
+                ],
+                [
+                    "RJ",
+                    1824092.67
+                ],
+                [
+                    "MG",
+                    1585308.03
+                ],
+                [
+                    "RS",
+                    750304.02
+                ],
+                [
+                    "PR",
+                    683083.76
+                ],
+                [
+                    "SC",
+                    520553.34
+                ],
+                [
+                    "BA",
+                    511349.99
+                ],
+                [
+                    "DF",
+                    302603.94
+                ],
+                [
+                    "GO",
+                    294591.95
+                ],
+                [
+                    "ES",
+                    275037.31
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "SP",
+                    "total_revenue": 5202955.05
+                },
+                {
+                    "customer_state": "RJ",
+                    "total_revenue": 1824092.67
+                },
+                {
+                    "customer_state": "MG",
+                    "total_revenue": 1585308.03
+                },
+                {
+                    "customer_state": "RS",
+                    "total_revenue": 750304.02
+                },
+                {
+                    "customer_state": "PR",
+                    "total_revenue": 683083.76
+                },
+                {
+                    "customer_state": "SC",
+                    "total_revenue": 520553.34
+                },
+                {
+                    "customer_state": "BA",
+                    "total_revenue": 511349.99
+                },
+                {
+                    "customer_state": "DF",
+                    "total_revenue": 302603.94
+                },
+                {
+                    "customer_state": "GO",
+                    "total_revenue": 294591.95
+                },
+                {
+                    "customer_state": "ES",
+                    "total_revenue": 275037.31
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 36,
+            "category": "delivery",
+            "question": "What is the average delivery time in days for each customer state?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                c.customer_state,\n                ROUND(\n                    AVG(DATE_DIFF(\n                        'day',\n                        o.order_purchase_timestamp,\n                        o.order_delivered_customer_date\n                    )), 2\n                ) AS average_delivery_days\n            FROM olist_orders_dataset o\n            JOIN olist_customers_dataset c\n                ON o.customer_id = c.customer_id\n            WHERE o.order_delivered_customer_date IS NOT NULL\n            GROUP BY c.customer_state\n            ORDER BY average_delivery_days",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.043,
+            "actual_result": [
+                [
+                    "SP",
+                    8.7
+                ],
+                [
+                    "PR",
+                    11.94
+                ],
+                [
+                    "MG",
+                    11.95
+                ],
+                [
+                    "DF",
+                    12.9
+                ],
+                [
+                    "SC",
+                    14.91
+                ],
+                [
+                    "RJ",
+                    15.24
+                ],
+                [
+                    "RS",
+                    15.25
+                ],
+                [
+                    "MS",
+                    15.54
+                ],
+                [
+                    "GO",
+                    15.54
+                ],
+                [
+                    "ES",
+                    15.72
+                ],
+                [
+                    "TO",
+                    17.6
+                ],
+                [
+                    "MT",
+                    18.0
+                ],
+                [
+                    "PE",
+                    18.4
+                ],
+                [
+                    "RN",
+                    19.22
+                ],
+                [
+                    "RO",
+                    19.28
+                ],
+                [
+                    "BA",
+                    19.28
+                ],
+                [
+                    "PI",
+                    19.39
+                ],
+                [
+                    "PB",
+                    20.39
+                ],
+                [
+                    "AC",
+                    21.0
+                ],
+                [
+                    "CE",
+                    21.2
+                ],
+                [
+                    "SE",
+                    21.46
+                ],
+                [
+                    "MA",
+                    21.51
+                ],
+                [
+                    "PA",
+                    23.73
+                ],
+                [
+                    "AL",
+                    24.5
+                ],
+                [
+                    "AM",
+                    26.36
+                ],
+                [
+                    "AP",
+                    27.18
+                ],
+                [
+                    "RR",
+                    29.34
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "SP",
+                    "average_delivery_days": 8.7
+                },
+                {
+                    "customer_state": "PR",
+                    "average_delivery_days": 11.94
+                },
+                {
+                    "customer_state": "MG",
+                    "average_delivery_days": 11.95
+                },
+                {
+                    "customer_state": "DF",
+                    "average_delivery_days": 12.9
+                },
+                {
+                    "customer_state": "SC",
+                    "average_delivery_days": 14.91
+                },
+                {
+                    "customer_state": "RJ",
+                    "average_delivery_days": 15.24
+                },
+                {
+                    "customer_state": "RS",
+                    "average_delivery_days": 15.25
+                },
+                {
+                    "customer_state": "MS",
+                    "average_delivery_days": 15.54
+                },
+                {
+                    "customer_state": "GO",
+                    "average_delivery_days": 15.54
+                },
+                {
+                    "customer_state": "ES",
+                    "average_delivery_days": 15.72
+                },
+                {
+                    "customer_state": "TO",
+                    "average_delivery_days": 17.6
+                },
+                {
+                    "customer_state": "MT",
+                    "average_delivery_days": 18.0
+                },
+                {
+                    "customer_state": "PE",
+                    "average_delivery_days": 18.4
+                },
+                {
+                    "customer_state": "RN",
+                    "average_delivery_days": 19.22
+                },
+                {
+                    "customer_state": "RO",
+                    "average_delivery_days": 19.28
+                },
+                {
+                    "customer_state": "BA",
+                    "average_delivery_days": 19.28
+                },
+                {
+                    "customer_state": "PI",
+                    "average_delivery_days": 19.39
+                },
+                {
+                    "customer_state": "PB",
+                    "average_delivery_days": 20.39
+                },
+                {
+                    "customer_state": "AC",
+                    "average_delivery_days": 21.0
+                },
+                {
+                    "customer_state": "CE",
+                    "average_delivery_days": 21.2
+                },
+                {
+                    "customer_state": "SE",
+                    "average_delivery_days": 21.46
+                },
+                {
+                    "customer_state": "MA",
+                    "average_delivery_days": 21.51
+                },
+                {
+                    "customer_state": "PA",
+                    "average_delivery_days": 23.73
+                },
+                {
+                    "customer_state": "AL",
+                    "average_delivery_days": 24.5
+                },
+                {
+                    "customer_state": "AM",
+                    "average_delivery_days": 26.36
+                },
+                {
+                    "customer_state": "AP",
+                    "average_delivery_days": 27.18
+                },
+                {
+                    "customer_state": "RR",
+                    "average_delivery_days": 29.34
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 37,
+            "category": "delivery",
+            "question": "Which ten customer states have the highest late delivery rates?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                c.customer_state,\n                ROUND(\n                    100.0 * SUM(\n                        CASE\n                            WHEN o.order_delivered_customer_date >\n                                 o.order_estimated_delivery_date\n                            THEN 1 ELSE 0\n                        END\n                    ) / COUNT(*), 2\n                ) AS late_delivery_percentage\n            FROM olist_orders_dataset o\n            JOIN olist_customers_dataset c\n                ON o.customer_id = c.customer_id\n            WHERE o.order_delivered_customer_date IS NOT NULL\n              AND o.order_estimated_delivery_date IS NOT NULL\n            GROUP BY c.customer_state\n            ORDER BY late_delivery_percentage DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.044,
+            "actual_result": [
+                [
+                    "AL",
+                    23.93
+                ],
+                [
+                    "MA",
+                    19.67
+                ],
+                [
+                    "PI",
+                    15.97
+                ],
+                [
+                    "CE",
+                    15.32
+                ],
+                [
+                    "SE",
+                    15.22
+                ],
+                [
+                    "BA",
+                    14.04
+                ],
+                [
+                    "RJ",
+                    13.47
+                ],
+                [
+                    "TO",
+                    12.77
+                ],
+                [
+                    "PA",
+                    12.37
+                ],
+                [
+                    "ES",
+                    12.23
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "AL",
+                    "late_delivery_percentage": 23.93
+                },
+                {
+                    "customer_state": "MA",
+                    "late_delivery_percentage": 19.67
+                },
+                {
+                    "customer_state": "PI",
+                    "late_delivery_percentage": 15.97
+                },
+                {
+                    "customer_state": "CE",
+                    "late_delivery_percentage": 15.32
+                },
+                {
+                    "customer_state": "SE",
+                    "late_delivery_percentage": 15.22
+                },
+                {
+                    "customer_state": "BA",
+                    "late_delivery_percentage": 14.04
+                },
+                {
+                    "customer_state": "RJ",
+                    "late_delivery_percentage": 13.47
+                },
+                {
+                    "customer_state": "TO",
+                    "late_delivery_percentage": 12.77
+                },
+                {
+                    "customer_state": "PA",
+                    "late_delivery_percentage": 12.37
+                },
+                {
+                    "customer_state": "ES",
+                    "late_delivery_percentage": 12.23
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 38,
+            "category": "delivery",
+            "question": "What is the average number of days that late orders exceeded their estimated delivery dates?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT ROUND(\n                AVG(DATE_DIFF(\n                    'day',\n                    order_estimated_delivery_date,\n                    order_delivered_customer_date\n                )), 2\n            ) AS average_days_late\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NOT NULL\n              AND order_estimated_delivery_date IS NOT NULL\n              AND order_delivered_customer_date >\n                  order_estimated_delivery_date",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.018,
+            "actual_result": [
+                [
+                    8.87
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_days_late": 8.87
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 39,
+            "category": "payments",
+            "question": "What is the average number of installments for each payment type?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT\n                payment_type,\n                ROUND(AVG(payment_installments), 2)\n                    AS average_installments\n            FROM olist_order_payments_dataset\n            GROUP BY payment_type\n            ORDER BY average_installments DESC",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.017,
+            "actual_result": [
+                [
+                    "credit_card",
+                    3.51
+                ],
+                [
+                    "voucher",
+                    1.0
+                ],
+                [
+                    "debit_card",
+                    1.0
+                ],
+                [
+                    "not_defined",
+                    1.0
+                ],
+                [
+                    "boleto",
+                    1.0
+                ]
+            ],
+            "expected_result": [
+                {
+                    "payment_type": "credit_card",
+                    "average_installments": 3.51
+                },
+                {
+                    "payment_type": "boleto",
+                    "average_installments": 1.0
+                },
+                {
+                    "payment_type": "voucher",
+                    "average_installments": 1.0
+                },
+                {
+                    "payment_type": "debit_card",
+                    "average_installments": 1.0
+                },
+                {
+                    "payment_type": "not_defined",
+                    "average_installments": 1.0
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 40,
+            "category": "payments",
+            "question": "How many payments were made in each installment count?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                payment_installments,\n                COUNT(*) AS payment_count\n            FROM olist_order_payments_dataset\n            GROUP BY payment_installments\n            ORDER BY payment_installments",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.016,
+            "actual_result": [
+                [
+                    0,
+                    2
+                ],
+                [
+                    1,
+                    52546
+                ],
+                [
+                    2,
+                    12413
+                ],
+                [
+                    3,
+                    10461
+                ],
+                [
+                    4,
+                    7098
+                ],
+                [
+                    5,
+                    5239
+                ],
+                [
+                    6,
+                    3920
+                ],
+                [
+                    7,
+                    1626
+                ],
+                [
+                    8,
+                    4268
+                ],
+                [
+                    9,
+                    644
+                ],
+                [
+                    10,
+                    5328
+                ],
+                [
+                    11,
+                    23
+                ],
+                [
+                    12,
+                    133
+                ],
+                [
+                    13,
+                    16
+                ],
+                [
+                    14,
+                    15
+                ],
+                [
+                    15,
+                    74
+                ],
+                [
+                    16,
+                    5
+                ],
+                [
+                    17,
+                    8
+                ],
+                [
+                    18,
+                    27
+                ],
+                [
+                    20,
+                    17
+                ],
+                [
+                    21,
+                    3
+                ],
+                [
+                    22,
+                    1
+                ],
+                [
+                    23,
+                    1
+                ],
+                [
+                    24,
+                    18
+                ]
+            ],
+            "expected_result": [
+                {
+                    "payment_installments": 0,
+                    "payment_count": 2
+                },
+                {
+                    "payment_installments": 1,
+                    "payment_count": 52546
+                },
+                {
+                    "payment_installments": 2,
+                    "payment_count": 12413
+                },
+                {
+                    "payment_installments": 3,
+                    "payment_count": 10461
+                },
+                {
+                    "payment_installments": 4,
+                    "payment_count": 7098
+                },
+                {
+                    "payment_installments": 5,
+                    "payment_count": 5239
+                },
+                {
+                    "payment_installments": 6,
+                    "payment_count": 3920
+                },
+                {
+                    "payment_installments": 7,
+                    "payment_count": 1626
+                },
+                {
+                    "payment_installments": 8,
+                    "payment_count": 4268
+                },
+                {
+                    "payment_installments": 9,
+                    "payment_count": 644
+                },
+                {
+                    "payment_installments": 10,
+                    "payment_count": 5328
+                },
+                {
+                    "payment_installments": 11,
+                    "payment_count": 23
+                },
+                {
+                    "payment_installments": 12,
+                    "payment_count": 133
+                },
+                {
+                    "payment_installments": 13,
+                    "payment_count": 16
+                },
+                {
+                    "payment_installments": 14,
+                    "payment_count": 15
+                },
+                {
+                    "payment_installments": 15,
+                    "payment_count": 74
+                },
+                {
+                    "payment_installments": 16,
+                    "payment_count": 5
+                },
+                {
+                    "payment_installments": 17,
+                    "payment_count": 8
+                },
+                {
+                    "payment_installments": 18,
+                    "payment_count": 27
+                },
+                {
+                    "payment_installments": 20,
+                    "payment_count": 17
+                },
+                {
+                    "payment_installments": 21,
+                    "payment_count": 3
+                },
+                {
+                    "payment_installments": 22,
+                    "payment_count": 1
+                },
+                {
+                    "payment_installments": 23,
+                    "payment_count": 1
+                },
+                {
+                    "payment_installments": 24,
+                    "payment_count": 18
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 41,
+            "category": "reviews",
+            "question": "What is the average review score for each payment type?",
+            "comparison_mode": "unordered",
+            "generated_sql": "WITH order_payment_types AS (\n                SELECT DISTINCT order_id, payment_type\n                FROM olist_order_payments_dataset\n            )\n            SELECT\n                p.payment_type,\n                ROUND(AVG(r.review_score), 2)\n                    AS average_review_score\n            FROM order_payment_types p\n            JOIN olist_order_reviews_dataset r\n                ON p.order_id = r.order_id\n            GROUP BY p.payment_type\n            ORDER BY average_review_score DESC",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.044,
+            "actual_result": [
+                [
+                    "debit_card",
+                    4.17
+                ],
+                [
+                    "credit_card",
+                    4.09
+                ],
+                [
+                    "boleto",
+                    4.09
+                ],
+                [
+                    "voucher",
+                    4.02
+                ],
+                [
+                    "not_defined",
+                    1.67
+                ]
+            ],
+            "expected_result": [
+                {
+                    "payment_type": "debit_card",
+                    "average_review_score": 4.17
+                },
+                {
+                    "payment_type": "boleto",
+                    "average_review_score": 4.09
+                },
+                {
+                    "payment_type": "credit_card",
+                    "average_review_score": 4.09
+                },
+                {
+                    "payment_type": "voucher",
+                    "average_review_score": 4.02
+                },
+                {
+                    "payment_type": "not_defined",
+                    "average_review_score": 1.67
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 42,
+            "category": "reviews",
+            "question": "What is the average review score for on-time and late delivered orders?",
+            "comparison_mode": "unordered",
+            "generated_sql": "SELECT\n                CASE\n                    WHEN o.order_delivered_customer_date >\n                         o.order_estimated_delivery_date\n                    THEN 'late'\n                    ELSE 'on_time'\n                END AS delivery_status,\n                ROUND(AVG(r.review_score), 2)\n                    AS average_review_score\n            FROM olist_orders_dataset o\n            JOIN olist_order_reviews_dataset r\n                ON o.order_id = r.order_id\n            WHERE o.order_delivered_customer_date IS NOT NULL\n              AND o.order_estimated_delivery_date IS NOT NULL\n            GROUP BY delivery_status\n            ORDER BY delivery_status",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.046,
+            "actual_result": [
+                [
+                    "late",
+                    2.57
+                ],
+                [
+                    "on_time",
+                    4.29
+                ]
+            ],
+            "expected_result": [
+                {
+                    "delivery_status": "late",
+                    "average_review_score": 2.57
+                },
+                {
+                    "delivery_status": "on_time",
+                    "average_review_score": 4.29
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 43,
+            "category": "complex_joins",
+            "question": "What are the top 20 customer-state and product-category combinations by product revenue?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                c.customer_state,\n                t.product_category_name_english AS category,\n                ROUND(SUM(i.price), 2) AS total_revenue\n            FROM olist_orders_dataset o\n            JOIN olist_customers_dataset c\n                ON o.customer_id = c.customer_id\n            JOIN olist_order_items_dataset i\n                ON o.order_id = i.order_id\n            JOIN olist_products_dataset p\n                ON i.product_id = p.product_id\n            JOIN product_category_name_translation t\n                ON p.product_category_name = t.product_category_name\n            GROUP BY c.customer_state, category\n            ORDER BY total_revenue DESC\n            LIMIT 20",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.082,
+            "actual_result": [
+                [
+                    "SP",
+                    "bed_bath_table",
+                    478284.52
+                ],
+                [
+                    "SP",
+                    "health_beauty",
+                    462305.22
+                ],
+                [
+                    "SP",
+                    "watches_gifts",
+                    435009.92
+                ],
+                [
+                    "SP",
+                    "sports_leisure",
+                    386357.01
+                ],
+                [
+                    "SP",
+                    "computers_accessories",
+                    350747.88
+                ],
+                [
+                    "SP",
+                    "furniture_decor",
+                    286708.02
+                ],
+                [
+                    "SP",
+                    "housewares",
+                    275378.63
+                ],
+                [
+                    "SP",
+                    "auto",
+                    214277.27
+                ],
+                [
+                    "SP",
+                    "cool_stuff",
+                    213186.89
+                ],
+                [
+                    "SP",
+                    "toys",
+                    185561.83
+                ],
+                [
+                    "RJ",
+                    "watches_gifts",
+                    185379.65
+                ],
+                [
+                    "SP",
+                    "perfumery",
+                    166630.55
+                ],
+                [
+                    "MG",
+                    "health_beauty",
+                    157558.3
+                ],
+                [
+                    "SP",
+                    "baby",
+                    156716.76
+                ],
+                [
+                    "SP",
+                    "garden_tools",
+                    153180.74
+                ],
+                [
+                    "RJ",
+                    "bed_bath_table",
+                    148035.23
+                ],
+                [
+                    "RJ",
+                    "health_beauty",
+                    145298.62
+                ],
+                [
+                    "MG",
+                    "bed_bath_table",
+                    129643.98
+                ],
+                [
+                    "RJ",
+                    "sports_leisure",
+                    125148.04
+                ],
+                [
+                    "MG",
+                    "watches_gifts",
+                    123759.23
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_state": "SP",
+                    "category": "bed_bath_table",
+                    "total_revenue": 478284.52
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "health_beauty",
+                    "total_revenue": 462305.22
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "watches_gifts",
+                    "total_revenue": 435009.92
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "sports_leisure",
+                    "total_revenue": 386357.01
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "computers_accessories",
+                    "total_revenue": 350747.88
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "furniture_decor",
+                    "total_revenue": 286708.02
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "housewares",
+                    "total_revenue": 275378.63
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "auto",
+                    "total_revenue": 214277.27
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "cool_stuff",
+                    "total_revenue": 213186.89
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "toys",
+                    "total_revenue": 185561.83
+                },
+                {
+                    "customer_state": "RJ",
+                    "category": "watches_gifts",
+                    "total_revenue": 185379.65
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "perfumery",
+                    "total_revenue": 166630.55
+                },
+                {
+                    "customer_state": "MG",
+                    "category": "health_beauty",
+                    "total_revenue": 157558.3
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "baby",
+                    "total_revenue": 156716.76
+                },
+                {
+                    "customer_state": "SP",
+                    "category": "garden_tools",
+                    "total_revenue": 153180.74
+                },
+                {
+                    "customer_state": "RJ",
+                    "category": "bed_bath_table",
+                    "total_revenue": 148035.23
+                },
+                {
+                    "customer_state": "RJ",
+                    "category": "health_beauty",
+                    "total_revenue": 145298.62
+                },
+                {
+                    "customer_state": "MG",
+                    "category": "bed_bath_table",
+                    "total_revenue": 129643.98
+                },
+                {
+                    "customer_state": "RJ",
+                    "category": "sports_leisure",
+                    "total_revenue": 125148.04
+                },
+                {
+                    "customer_state": "MG",
+                    "category": "watches_gifts",
+                    "total_revenue": 123759.23
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 44,
+            "category": "complex_joins",
+            "question": "Which ten sellers have the highest number of distinct delivered orders?",
+            "comparison_mode": "ordered",
+            "generated_sql": "SELECT\n                i.seller_id,\n                COUNT(DISTINCT o.order_id) AS delivered_order_count\n            FROM olist_order_items_dataset i\n            JOIN olist_orders_dataset o\n                ON i.order_id = o.order_id\n            WHERE o.order_status = 'delivered'\n            GROUP BY i.seller_id\n            ORDER BY delivered_order_count DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.058,
+            "actual_result": [
+                [
+                    "6560211a19b47992c3666cc44a7e94c0",
+                    1819
+                ],
+                [
+                    "4a3ca9315b744ce9f8e9374361493884",
+                    1772
+                ],
+                [
+                    "cc419e0650a3c5ba77189a1882b7556a",
+                    1651
+                ],
+                [
+                    "1f50f920176fa81dab994f9023523100",
+                    1399
+                ],
+                [
+                    "da8622b14eb17ae2831f4ac5b9dab84a",
+                    1311
+                ],
+                [
+                    "955fee9216a65b617aa5c0531780ce60",
+                    1261
+                ],
+                [
+                    "7a67c85e85bb2ce8582c35f2203ad736",
+                    1145
+                ],
+                [
+                    "ea8482cd71df3c1969d7b9473ff13abc",
+                    1132
+                ],
+                [
+                    "4869f7a5dfa277a7dca6462dcf3b52b2",
+                    1124
+                ],
+                [
+                    "3d871de0142ce09b7081e2b9d1733cb1",
+                    1064
+                ]
+            ],
+            "expected_result": [
+                {
+                    "seller_id": "6560211a19b47992c3666cc44a7e94c0",
+                    "delivered_order_count": 1819
+                },
+                {
+                    "seller_id": "4a3ca9315b744ce9f8e9374361493884",
+                    "delivered_order_count": 1772
+                },
+                {
+                    "seller_id": "cc419e0650a3c5ba77189a1882b7556a",
+                    "delivered_order_count": 1651
+                },
+                {
+                    "seller_id": "1f50f920176fa81dab994f9023523100",
+                    "delivered_order_count": 1399
+                },
+                {
+                    "seller_id": "da8622b14eb17ae2831f4ac5b9dab84a",
+                    "delivered_order_count": 1311
+                },
+                {
+                    "seller_id": "955fee9216a65b617aa5c0531780ce60",
+                    "delivered_order_count": 1261
+                },
+                {
+                    "seller_id": "7a67c85e85bb2ce8582c35f2203ad736",
+                    "delivered_order_count": 1145
+                },
+                {
+                    "seller_id": "ea8482cd71df3c1969d7b9473ff13abc",
+                    "delivered_order_count": 1132
+                },
+                {
+                    "seller_id": "4869f7a5dfa277a7dca6462dcf3b52b2",
+                    "delivered_order_count": 1124
+                },
+                {
+                    "seller_id": "3d871de0142ce09b7081e2b9d1733cb1",
+                    "delivered_order_count": 1064
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 45,
+            "category": "complex_joins",
+            "question": "Which ten product categories have the highest average review scores?",
+            "comparison_mode": "unordered",
+            "generated_sql": "WITH order_category AS (\n                SELECT DISTINCT\n                    i.order_id,\n                    t.product_category_name_english AS category\n                FROM olist_order_items_dataset i\n                JOIN olist_products_dataset p\n                    ON i.product_id = p.product_id\n                JOIN product_category_name_translation t\n                    ON p.product_category_name = t.product_category_name\n            )\n            SELECT\n                oc.category,\n                ROUND(AVG(r.review_score), 2)\n                    AS average_review_score\n            FROM order_category oc\n            JOIN olist_order_reviews_dataset r\n                ON oc.order_id = r.order_id\n            GROUP BY oc.category\n            ORDER BY AVG(r.review_score) DESC\n            LIMIT 10",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.063,
+            "actual_result": [
+                [
+                    "cds_dvds_musicals",
+                    4.67
+                ],
+                [
+                    "fashion_childrens_clothes",
+                    4.5
+                ],
+                [
+                    "books_general_interest",
+                    4.46
+                ],
+                [
+                    "costruction_tools_tools",
+                    4.43
+                ],
+                [
+                    "books_technical",
+                    4.41
+                ],
+                [
+                    "flowers",
+                    4.39
+                ],
+                [
+                    "food_drink",
+                    4.39
+                ],
+                [
+                    "luggage_accessories",
+                    4.33
+                ],
+                [
+                    "books_imported",
+                    4.32
+                ],
+                [
+                    "small_appliances_home_oven_and_coffee",
+                    4.29
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "cds_dvds_musicals",
+                    "average_review_score": 4.67
+                },
+                {
+                    "category": "fashion_childrens_clothes",
+                    "average_review_score": 4.5
+                },
+                {
+                    "category": "books_general_interest",
+                    "average_review_score": 4.46
+                },
+                {
+                    "category": "costruction_tools_tools",
+                    "average_review_score": 4.43
+                },
+                {
+                    "category": "books_technical",
+                    "average_review_score": 4.41
+                },
+                {
+                    "category": "flowers",
+                    "average_review_score": 4.39
+                },
+                {
+                    "category": "food_drink",
+                    "average_review_score": 4.39
+                },
+                {
+                    "category": "luggage_accessories",
+                    "average_review_score": 4.33
+                },
+                {
+                    "category": "books_imported",
+                    "average_review_score": 4.32
+                },
+                {
+                    "category": "small_appliances_home_oven_and_coffee",
+                    "average_review_score": 4.29
                 }
             ],
             "error": null

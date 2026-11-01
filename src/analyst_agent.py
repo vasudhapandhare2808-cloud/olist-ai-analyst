@@ -1,12 +1,11 @@
 
 import json
-import re
-
 import ollama
 
 from src.text_to_sql import generate_valid_sql
 from src.safe_sql import run_safe_query
 from src.result_validator import validate_result
+from src.question_validator import validate_question
 
 
 MODEL = "llama3.2:3b"
@@ -14,7 +13,7 @@ MAX_TOOL_ROUNDS = 3
 
 
 def run_business_query(question: str) -> str:
-    """Generate validated SQL, execute it, and return actual database results."""
+    """Generate validated SQL, execute it, and return database results."""
 
     try:
         sql = generate_valid_sql(question, max_attempts=2)
@@ -27,13 +26,14 @@ def run_business_query(question: str) -> str:
 
         rows = json.loads(result.to_json(orient="records"))
 
-        tool_result = {
-            "success": True,
-            "sql": sql,
-            "rows": rows,
-        }
-
-        return json.dumps(tool_result, ensure_ascii=False)
+        return json.dumps(
+            {
+                "success": True,
+                "sql": sql,
+                "rows": rows,
+            },
+            ensure_ascii=False,
+        )
 
     except Exception as exc:
         return json.dumps(
@@ -52,8 +52,8 @@ TOOLS = [
             "name": "run_business_query",
             "description": (
                 "Answer a business question by generating validated SQL "
-                "and querying the Olist database. Pass the user's "
-                "business question."
+                "with the existing Text-to-SQL pipeline and querying "
+                "the Olist database. Pass the user's business question."
             ),
             "parameters": {
                 "type": "object",
@@ -71,22 +71,23 @@ TOOLS = [
 
 
 def ask_analyst(question: str) -> str:
-    """Use Llama for tool selection and explanations."""
+    """Validate the question, execute tools, and return a reliable answer."""
+
+    is_valid, reason = validate_question(question)
+
+    if not is_valid:
+        return reason
 
     messages = [
         {
             "role": "system",
             "content": (
                 "You are an AI data analyst for the Olist e-commerce "
-                "database. To answer database questions, call the "
-                "run_business_query tool and pass the user's question. "
-                "Do not write SQL yourself. "
-                "Base your answer only on successful tool results. "
-                "Copy numeric values exactly as supplied by the tool. "
-                "Never change, round, estimate, or invent numbers. "
-                "If the tool reports failure, explain that the query "
-                "could not be completed. Never claim a failed query "
-                "succeeded."
+                "database. Call run_business_query to answer database "
+                "questions. Do not write SQL yourself. "
+                "Use only successful tool results. Copy numeric values "
+                "exactly as supplied; never invent or alter them. "
+                "Do not claim a query succeeded if it failed."
             ),
         },
         {
@@ -105,7 +106,6 @@ def ask_analyst(question: str) -> str:
 
         message = response.message
 
-        # If the model gives a final response, return it.
         if not message.tool_calls:
             return message.content or "The model returned no answer."
 
@@ -116,41 +116,54 @@ def ask_analyst(question: str) -> str:
             arguments = tool_call.function.arguments
 
             if tool_name != "run_business_query":
-                tool_result = {
-                    "success": False,
-                    "error": "Unknown tool requested.",
-                }
+                return (
+                    "The analyst requested an unknown tool. "
+                    "The query was not completed."
+                )
 
-            elif not isinstance(arguments, dict):
-                tool_result = {
-                    "success": False,
-                    "error": "Tool arguments must be an object.",
-                }
+            if not isinstance(arguments, dict):
+                return "The analyst supplied invalid tool arguments."
 
-            elif not isinstance(arguments.get("question"), str):
-                tool_result = {
-                    "success": False,
-                    "error": "The question argument must be a string.",
-                }
+            tool_question = arguments.get("question")
 
-            elif not arguments["question"].strip():
-                tool_result = {
-                    "success": False,
-                    "error": "The question cannot be empty.",
-                }
+            if (
+                not isinstance(tool_question, str)
+                or not tool_question.strip()
+            ):
+                return "The analyst supplied an empty or invalid business question."
 
-            else:
-                print(f"\n--- TOOL ROUND {round_number + 1} ---")
-                print("Business question:", arguments["question"])
+            print(f"\n--- TOOL ROUND {round_number + 1} ---")
+            print("Business question:", tool_question)
 
-                raw_result = run_business_query(arguments["question"])
-                tool_result = json.loads(raw_result)
+            raw_result = run_business_query(tool_question)
+            tool_result = json.loads(raw_result)
 
             print(
                 "Tool result:",
                 json.dumps(tool_result, ensure_ascii=False),
             )
 
+            # Failures are handled directly by Python.
+            if not tool_result.get("success"):
+                error = tool_result.get(
+                    "error",
+                    "Unknown query error.",
+                )
+                return f"The query could not be completed. Reason: {error}"
+
+            # Targeted exact answer for the total-order count.
+            sql = tool_result.get("sql", "").strip().rstrip(";").lower()
+            rows = tool_result.get("rows", [])
+
+            if (
+                sql == "select count(*) from olist_orders_dataset"
+                and len(rows) == 1
+                and "count_star()" in rows[0]
+            ):
+                count = rows[0]["count_star()"]
+                return f"There are {count:,} orders in total."
+
+            # Other successful queries are explained by the language model.
             messages.append(
                 {
                     "role": "tool",
@@ -162,19 +175,18 @@ def ask_analyst(question: str) -> str:
                 }
             )
 
-    return "Stopped after reaching the maximum tool-call rounds."
+    return "The analyst stopped after reaching the maximum tool-call rounds."
 
 
 def main():
     question = input("Ask your Olist AI Analyst: ").strip()
 
     if not question:
-        print("Please enter a question.")
+        print("Please enter a business question.")
         return
 
     try:
         answer = ask_analyst(question)
-
         print("\n--- ANALYST ANSWER ---")
         print(answer)
 

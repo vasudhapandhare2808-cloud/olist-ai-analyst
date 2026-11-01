@@ -1,0 +1,557 @@
+{
+    "summary": {
+        "total_questions": 15,
+        "sql_generation_successes": 15,
+        "sql_generation_success_rate": 100.0,
+        "execution_successes": 15,
+        "sql_execution_success_rate": 100.0,
+        "correct_results": 15,
+        "result_accuracy": 100.0,
+        "average_latency_seconds": 2.305
+    },
+    "results": [
+        {
+            "id": 1,
+            "category": "orders",
+            "question": "How many orders are there in total?",
+            "generated_sql": "SELECT COUNT(*) FROM olist_orders_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 5.649,
+            "actual_result": [
+                [
+                    99441
+                ]
+            ],
+            "expected_result": [
+                {
+                    "total_orders": 99441
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 2,
+            "category": "orders",
+            "question": "How many orders are there in each order status?",
+            "generated_sql": "SELECT order_status, COUNT(*) AS order_count\nFROM olist_orders_dataset\nGROUP BY order_status;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.241,
+            "actual_result": [
+                [
+                    "invoiced",
+                    314
+                ],
+                [
+                    "processing",
+                    301
+                ],
+                [
+                    "canceled",
+                    625
+                ],
+                [
+                    "shipped",
+                    1107
+                ],
+                [
+                    "delivered",
+                    96478
+                ],
+                [
+                    "created",
+                    5
+                ],
+                [
+                    "unavailable",
+                    609
+                ],
+                [
+                    "approved",
+                    2
+                ]
+            ],
+            "expected_result": [
+                {
+                    "order_status": "delivered",
+                    "order_count": 96478
+                },
+                {
+                    "order_status": "shipped",
+                    "order_count": 1107
+                },
+                {
+                    "order_status": "canceled",
+                    "order_count": 625
+                },
+                {
+                    "order_status": "unavailable",
+                    "order_count": 609
+                },
+                {
+                    "order_status": "invoiced",
+                    "order_count": 314
+                },
+                {
+                    "order_status": "processing",
+                    "order_count": 301
+                },
+                {
+                    "order_status": "created",
+                    "order_count": 5
+                },
+                {
+                    "order_status": "approved",
+                    "order_count": 2
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 3,
+            "category": "orders",
+            "question": "What is the percentage of orders that were delivered?",
+            "generated_sql": "SELECT CAST(COUNT(CASE WHEN order_delivered_customer_date IS NOT NULL THEN 1 ELSE NULL END) AS REAL) * 100 / COUNT(*) FROM olist_orders_dataset",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.996,
+            "actual_result": [
+                [
+                    97.0183334350586
+                ]
+            ],
+            "expected_result": [
+                {
+                    "delivered_percentage": 97.02
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 4,
+            "category": "customers",
+            "question": "How many unique customers are there?",
+            "generated_sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customer_count FROM olist_customers_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.397,
+            "actual_result": [
+                [
+                    96096
+                ]
+            ],
+            "expected_result": [
+                {
+                    "unique_customers": 96096
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 5,
+            "category": "customers",
+            "question": "Which five customer cities have the most customers?",
+            "generated_sql": "SELECT\n                customer_city,\n                COUNT(*) AS customer_count\n            FROM olist_customers_dataset\n            GROUP BY customer_city\n            ORDER BY customer_count DESC\n            LIMIT 5",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.023,
+            "actual_result": [
+                [
+                    "sao paulo",
+                    15540
+                ],
+                [
+                    "rio de janeiro",
+                    6882
+                ],
+                [
+                    "belo horizonte",
+                    2773
+                ],
+                [
+                    "brasilia",
+                    2131
+                ],
+                [
+                    "curitiba",
+                    1521
+                ]
+            ],
+            "expected_result": [
+                {
+                    "customer_city": "sao paulo",
+                    "customer_count": 15540
+                },
+                {
+                    "customer_city": "rio de janeiro",
+                    "customer_count": 6882
+                },
+                {
+                    "customer_city": "belo horizonte",
+                    "customer_count": 2773
+                },
+                {
+                    "customer_city": "brasilia",
+                    "customer_count": 2131
+                },
+                {
+                    "customer_city": "curitiba",
+                    "customer_count": 1521
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 6,
+            "category": "products",
+            "question": "What are the top five product categories by items sold?",
+            "generated_sql": "SELECT \n    pc.product_category_name_english AS category,\n    COUNT(*) AS item_count\nFROM \n    olist_order_items_dataset oi\nJOIN \n    olist_products_dataset p ON oi.product_id = p.product_id\nJOIN \n    product_category_name_translation pc ON p.product_category_name = pc.product_category_name\nGROUP BY \n    pc.product_category_name_english\nORDER BY \n    item_count DESC\nLIMIT 5;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 5.933,
+            "actual_result": [
+                [
+                    "bed_bath_table",
+                    11115
+                ],
+                [
+                    "health_beauty",
+                    9670
+                ],
+                [
+                    "sports_leisure",
+                    8641
+                ],
+                [
+                    "furniture_decor",
+                    8334
+                ],
+                [
+                    "computers_accessories",
+                    7827
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "bed_bath_table",
+                    "items_sold": 11115
+                },
+                {
+                    "category": "health_beauty",
+                    "items_sold": 9670
+                },
+                {
+                    "category": "sports_leisure",
+                    "items_sold": 8641
+                },
+                {
+                    "category": "furniture_decor",
+                    "items_sold": 8334
+                },
+                {
+                    "category": "computers_accessories",
+                    "items_sold": 7827
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 7,
+            "category": "products",
+            "question": "How many different products are listed in the products table?",
+            "generated_sql": "SELECT COUNT(DISTINCT product_id) AS product_count FROM olist_products_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.648,
+            "actual_result": [
+                [
+                    32951
+                ]
+            ],
+            "expected_result": [
+                {
+                    "total_products": 32951
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 8,
+            "category": "products",
+            "question": "Which five product categories have the highest average product weight?",
+            "generated_sql": "SELECT \n    pc.product_category_name_english AS category,\n    AVG(p.product_weight_g) AS average_weight\nFROM \n    olist_products_dataset p\nJOIN \n    product_category_name_translation pc ON p.product_category_name = pc.product_category_name\nWHERE \n    p.product_weight_g IS NOT NULL\nGROUP BY \n    pc.product_category_name_english\nORDER BY \n    average_weight DESC\nLIMIT 5;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 5.875,
+            "actual_result": [
+                [
+                    "furniture_mattress_and_upholstery",
+                    13190.0
+                ],
+                [
+                    "office_furniture",
+                    12740.867313915858
+                ],
+                [
+                    "kitchen_dining_laundry_garden_furniture",
+                    11598.563829787234
+                ],
+                [
+                    "furniture_bedroom",
+                    9997.222222222223
+                ],
+                [
+                    "home_appliances_2",
+                    9913.333333333334
+                ]
+            ],
+            "expected_result": [
+                {
+                    "category": "furniture_mattress_and_upholstery",
+                    "average_weight_g": 13190.0
+                },
+                {
+                    "category": "office_furniture",
+                    "average_weight_g": 12740.87
+                },
+                {
+                    "category": "kitchen_dining_laundry_garden_furniture",
+                    "average_weight_g": 11598.56
+                },
+                {
+                    "category": "furniture_bedroom",
+                    "average_weight_g": 9997.22
+                },
+                {
+                    "category": "home_appliances_2",
+                    "average_weight_g": 9913.33
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 9,
+            "category": "payments",
+            "question": "What is the average payment value?",
+            "generated_sql": "SELECT AVG(payment_value) FROM olist_order_payments_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.251,
+            "actual_result": [
+                [
+                    154.10038041698365
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_payment_value": 154.1
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 10,
+            "category": "payments",
+            "question": "How many payments were made using each payment type?",
+            "generated_sql": "SELECT payment_type, COUNT(*) AS payment_count\nFROM olist_order_payments_dataset\nGROUP BY payment_type;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.854,
+            "actual_result": [
+                [
+                    "boleto",
+                    19784
+                ],
+                [
+                    "voucher",
+                    5775
+                ],
+                [
+                    "debit_card",
+                    1529
+                ],
+                [
+                    "not_defined",
+                    3
+                ],
+                [
+                    "credit_card",
+                    76795
+                ]
+            ],
+            "expected_result": [
+                {
+                    "payment_type": "credit_card",
+                    "payment_count": 76795
+                },
+                {
+                    "payment_type": "boleto",
+                    "payment_count": 19784
+                },
+                {
+                    "payment_type": "voucher",
+                    "payment_count": 5775
+                },
+                {
+                    "payment_type": "debit_card",
+                    "payment_count": 1529
+                },
+                {
+                    "payment_type": "not_defined",
+                    "payment_count": 3
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 11,
+            "category": "delivery",
+            "question": "What is the average delivery time in days?",
+            "generated_sql": "SELECT AVG(DATEDIFF('day', order_purchase_timestamp, order_delivered_customer_date)) AS average_delivery_time_days\nFROM olist_orders_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 2.326,
+            "actual_result": [
+                [
+                    12.497336125046644
+                ]
+            ],
+            "expected_result": [
+                {
+                    "avg_delivery_days": 12.5
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 12,
+            "category": "delivery",
+            "question": "What percentage of delivered orders arrived late?",
+            "generated_sql": "SELECT\n                100.0 * SUM(\n                    CASE\n                        WHEN order_delivered_customer_date >\n                             order_estimated_delivery_date\n                        THEN 1\n                        ELSE 0\n                    END\n                ) / COUNT(*) AS late_delivery_percentage\n            FROM olist_orders_dataset\n            WHERE order_delivered_customer_date IS NOT NULL\n              AND order_estimated_delivery_date IS NOT NULL",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 0.026,
+            "actual_result": [
+                [
+                    8.112898544715785
+                ]
+            ],
+            "expected_result": [
+                {
+                    "late_delivery_percentage": 8.11
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 13,
+            "category": "delivery",
+            "question": "How many orders have not been delivered yet?",
+            "generated_sql": "SELECT COUNT(*) AS undelivered_orders\nFROM olist_orders_dataset\nWHERE order_delivered_customer_date IS NULL;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.955,
+            "actual_result": [
+                [
+                    2965
+                ]
+            ],
+            "expected_result": [
+                {
+                    "undelivered_orders": 2965
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 14,
+            "category": "reviews",
+            "question": "What is the average customer review score?",
+            "generated_sql": "SELECT AVG(review_score) FROM olist_order_reviews_dataset;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 1.239,
+            "actual_result": [
+                [
+                    4.08642062404257
+                ]
+            ],
+            "expected_result": [
+                {
+                    "average_review_score": 4.09
+                }
+            ],
+            "error": null
+        },
+        {
+            "id": 15,
+            "category": "reviews",
+            "question": "How many reviews were given for each review score?",
+            "generated_sql": "SELECT review_score, COUNT(*) AS review_count\nFROM olist_order_reviews_dataset\nGROUP BY review_score\nORDER BY review_score DESC;",
+            "sql_generation_success": true,
+            "execution_success": true,
+            "result_correct": true,
+            "latency_seconds": 2.163,
+            "actual_result": [
+                [
+                    5,
+                    57328
+                ],
+                [
+                    4,
+                    19142
+                ],
+                [
+                    3,
+                    8179
+                ],
+                [
+                    2,
+                    3151
+                ],
+                [
+                    1,
+                    11424
+                ]
+            ],
+            "expected_result": [
+                {
+                    "review_score": 5,
+                    "review_count": 57328
+                },
+                {
+                    "review_score": 4,
+                    "review_count": 19142
+                },
+                {
+                    "review_score": 3,
+                    "review_count": 8179
+                },
+                {
+                    "review_score": 2,
+                    "review_count": 3151
+                },
+                {
+                    "review_score": 1,
+                    "review_count": 11424
+                }
+            ],
+            "error": null
+        }
+    ]
+}

@@ -176,25 +176,13 @@ The Streamlit dashboard includes the following sections:
 - **Delivery Analytics:** Delivery performance and delays.
 - **AI Analyst:** Natural-language business questions and analytical responses.
 
-## Screenshots
+## Live Dashboard
 
-Add screenshots of the running application to `docs/screenshots/`.
+Explore the deployed Olist AI Analyst application:
 
-### Dashboard Overview
+**[Open Olist AI Analyst Dashboard](Y[https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app](https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app)**
 
-![Dashboard Overview](docs/screenshots/dashboard-overview.png)
-
-### Sales Analytics
-
-![Sales Analytics](docs/screenshots/sales-analytics.png)
-
-### AI Analyst
-
-![AI Analyst](docs/screenshots/ai-analyst.png)
-
-### AI Analyst Results and Generated SQL
-
-![AI Analyst Results](docs/screenshots/ai-analyst-results.png)
+The application is hosted on Streamlit Community Cloud and provides interactive business analytics, sales insights, delivery performance analysis, and AI-powered natural-language querying.
 
 ## Model Configuration
 

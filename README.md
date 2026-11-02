@@ -180,7 +180,7 @@ The Streamlit dashboard includes the following sections:
 
 Explore the deployed Olist AI Analyst application:
 
-**[Open Olist AI Analyst Dashboard]([https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app](https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app))**
+**[Open Olist AI Analyst Dashboard]([https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app](https://olist-ai-analyst-8adwamwpxgvknzxeubdj5q.streamlit.app)**
 
 The application is hosted on Streamlit Community Cloud and provides interactive business analytics, sales insights, delivery performance analysis, and AI-powered natural-language querying.
 

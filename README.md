@@ -1,6 +1,6 @@
 # Olist AI Analyst
 
-An AI-powered business intelligence application that converts natural-language business questions into SQL queries, executes them against an Olist e-commerce database, and presents the results in a conversational interface and interactive dashboard.
+An AI-powered business intelligence application that converts natural-language business questions into SQL queries, executes them against an Olist e-commerce database, and presents the results through a conversational interface and interactive dashboard.
 
 The project combines local large language models, SQL validation, DuckDB, and Streamlit to make e-commerce data easier to query and analyze.
 
@@ -23,9 +23,10 @@ The application generates SQL, validates it, executes it against the database, a
 - **Natural Language to SQL:** Converts business questions into SQL using Qwen 2.5 Coder.
 - **SQL Validation:** Uses SQLGlot to validate generated SQL and enforce query safety rules.
 - **Read-Only Database Execution:** Executes analytical queries against DuckDB.
-- **Result Validation:** Checks query results before they are formatted.
+- **Result Validation:** Checks query results before formatting.
 - **AI Analyst Agent:** Uses Llama 3.2 for tool calling and analyst interactions.
 - **Interactive Dashboard:** Provides business analytics through Streamlit and Plotly.
+- **Conversational Analytics:** Displays natural-language answers, query results, and generated SQL.
 - **Benchmark Evaluation:** Evaluates SQL generation, execution, and result accuracy using a 45-question benchmark.
 
 ## Technology Stack
@@ -45,38 +46,47 @@ The application generates SQL, validates it, executes it against the database, a
 ## System Architecture
 
 ```text
-                 User
-                   |
-                   v
-       Natural Language Question
-                   |
-                   v
-          Text-to-SQL Module
-          Qwen 2.5 Coder 3B
-                   |
-                   v
-           SQL Validation
-                SQLGlot
-                   |
-                   v
-          Read-Only SQL Execution
-                DuckDB
-                   |
-                   v
-            Result Validation
-                   |
-                   v
-           Answer Formatting
-                   |
-                   v
+                    User
+                     |
+                     v
+          Streamlit AI Analyst
+                     |
+                     v
              Analyst Agent
              Llama 3.2 3B
-                   |
-                   v
-           Formatted Response
+             Tool Calling
+                     |
+                     v
+           Business Query Tool
+                     |
+                     v
+            Text-to-SQL Module
+            Qwen 2.5 Coder 3B
+                     |
+                     v
+             SQL Validation
+                 SQLGlot
+                     |
+                     v
+          Read-Only SQL Execution
+                 DuckDB
+                     |
+                     v
+             Result Validation
+                     |
+                     v
+             Answer Formatting
+                     |
+                     v
+           Answer + Results + SQL
+                     |
+                     v
+            Streamlit Interface
 ```
 
-The Streamlit dashboard provides the interface for business analytics and AI analyst interactions.
+The Streamlit dashboard provides the interface for business analytics and AI Analyst interactions.
+
+The AI Analyst uses Llama 3.2 to coordinate analytical requests and invoke the Text-to-SQL module. Qwen 2.5 Coder generates SQL, which is validated and executed against DuckDB. The resulting data is validated and formatted for display.
 
 ## Dataset
 
@@ -135,7 +145,7 @@ olist.duckdb
 
 The dashboard and analytical queries cover metrics including:
 
-| Metric | Current Value |
+| Metric | Value |
 |---|---:|
 | Total Orders | 99,441 |
 | Unique Customers | 96,096 |
@@ -146,12 +156,14 @@ The dashboard and analytical queries cover metrics including:
 | Average Delivery Time | 12.50 days |
 | Late Delivery Rate | 8.11% |
 
-**Metric definitions:**
+### Metric Definitions
 
-- Delivery rate: Orders with a non-null customer delivery timestamp divided by all orders.
-- Average delivery time: Average number of days between purchase and customer delivery, excluding orders without a delivery date.
-- Late delivery rate: Delivered orders whose actual delivery date is later than the estimated delivery date, divided by eligible orders with both dates available.
-- Total product sales: Sum of item prices from the order items dataset. This is not the same as total payment value.
+- **Delivery rate:** Orders with a non-null customer delivery timestamp divided by all orders.
+- **Average delivery time:** Average number of days between purchase and customer delivery, excluding orders without a delivery date.
+- **Late delivery rate:** Delivered orders whose actual delivery date is later than the estimated delivery date, divided by eligible orders with both dates available.
+- **Total product sales:** Sum of item prices from the order items dataset. This is not the same as total payment value.
+
+These metrics are based on the processed Olist dataset and the project's analytical definitions.
 
 ## Dashboard
 
@@ -163,6 +175,26 @@ The Streamlit dashboard includes the following sections:
 - **Customer Analytics:** Customer distribution and related metrics.
 - **Delivery Analytics:** Delivery performance and delays.
 - **AI Analyst:** Natural-language business questions and analytical responses.
+
+## Screenshots
+
+Add screenshots of the running application to `docs/screenshots/`.
+
+### Dashboard Overview
+
+![Dashboard Overview](docs/screenshots/dashboard-overview.png)
+
+### Sales Analytics
+
+![Sales Analytics](docs/screenshots/sales-analytics.png)
+
+### AI Analyst
+
+![AI Analyst](docs/screenshots/ai-analyst.png)
+
+### AI Analyst Results and Generated SQL
+
+![AI Analyst Results](docs/screenshots/ai-analyst-results.png)
 
 ## Model Configuration
 
@@ -219,7 +251,7 @@ ollama serve
 
 ### 5. Add the dataset
 
-Download the Olist Brazilian E-Commerce Public Dataset and place the nine required CSV files inside:
+Download the Brazilian E-Commerce Public Dataset by Olist and place the nine required CSV files inside:
 
 ```text
 data/raw/
@@ -263,7 +295,7 @@ pytest -q
 
 ## Evaluation Results
 
-The project was evaluated using a benchmark containing 45 predefined business questions.
+The project was evaluated using a benchmark containing **45 predefined business questions**.
 
 | Evaluation Metric | Result |
 |---|---:|
@@ -273,7 +305,9 @@ The project was evaluated using a benchmark containing 45 predefined business qu
 | Result Accuracy | 100% |
 | Average Latency | 0.033 seconds |
 
-**Important:** The 100% result accuracy applies to this specific 45-question benchmark and its expected results. It should not be interpreted as guaranteed accuracy for arbitrary business questions.
+**Benchmark scope:** The reported 100% result accuracy applies to this specific 45-question benchmark and its expected results. It should not be interpreted as guaranteed accuracy for arbitrary business questions.
+
+The average latency should be interpreted according to the timing scope implemented in the evaluation script. It may not represent the full end-to-end response time of the AI Analyst.
 
 The evaluation report is available at:
 
@@ -292,10 +326,16 @@ The project includes tests for:
 - Analyst agent behavior
 - Tool calling
 
-Latest recorded test result:
+Latest recorded test status:
 
 ```text
-22 passed in 10.43s
+22 tests passed
+```
+
+Run the test suite using:
+
+```bash
+pytest -q
 ```
 
 ## Project Structure
@@ -308,7 +348,8 @@ olist-ai-analyst/
 │   └── queries.py
 │
 ├── docs/
-│   └── metrics.md
+│   ├── metrics.md
+│   └── screenshots/
 │
 ├── evaluation/
 │   ├── benchmark.json
@@ -339,12 +380,15 @@ olist-ai-analyst/
 └── README.md
 ```
 
+The dataset and generated database are excluded from version control.
+
 ## Limitations
 
-- The application depends on the quality of the generated SQL and the underlying dataset.
+- The application depends on the quality of generated SQL and the underlying dataset.
 - Benchmark accuracy represents performance on the included benchmark, not every possible business question.
 - Local model performance depends on available system resources.
 - The project currently uses the Olist dataset and its available business attributes.
+- The application requires Ollama and the configured local models to be available.
 
 ## Future Improvements
 
@@ -352,13 +396,13 @@ olist-ai-analyst/
 - Add support for additional datasets.
 - Improve dashboard filtering and analytical exploration.
 - Evaluate performance across different local language models.
+- Improve SQL generation and handling of ambiguous business questions.
 
 ## Author
 
 **Vasudha Pandhare**
 
-B.Tech, Electronics and Communication Engineering (AI & ML)
-
+B.Tech, Electronics and Communication Engineering (AI & ML)  
 MIT World Peace University, Pune
 
 GitHub: [vasudhapandhare2808-cloud](https://github.com/vasudhapandhare2808-cloud)

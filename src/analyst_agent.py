@@ -1,62 +1,66 @@
-
 import json
+
 import ollama
 
 from src.text_to_sql import generate_valid_sql
 from src.safe_sql import run_safe_query
 from src.result_validator import validate_result
-from src.question_validator import validate_question
 from src.answer_formatter import format_answer
+from src.question_validator import validate_question
 
 
 MODEL = "llama3.2:3b"
 MAX_TOOL_ROUNDS = 3
 
 
+# ==================================================
+# BUSINESS QUERY TOOL
+# ==================================================
+
 def run_business_query(question: str) -> str:
-    """Generate validated SQL, execute it, and return database results."""
+    """
+    Generate, validate, execute, and format a business query.
+
+    Returns a JSON string containing the SQL and query results.
+    """
 
     try:
+        # Generate SQL and validate it.
         sql = generate_valid_sql(question, max_attempts=2)
 
-        print("\n--- VALIDATED SQL ---")
+        print("\n--- GENERATED SQL ---")
         print(sql)
 
+        # Execute the query.
         result = run_safe_query(sql)
 
-        # Empty results are valid query outcomes.
-        if result.empty:
-            return json.dumps(
-                {
-                    "success": True,
-                    "sql": sql,
-                    "rows": [],
-                },
-                ensure_ascii=False,
-            )
-
+        # Validate the query result.
         validate_result(result)
 
-        rows = json.loads(result.to_json(orient="records"))
+        # Convert DataFrame into JSON-compatible records.
+        rows = result.to_dict(orient="records")
 
         return json.dumps(
             {
                 "success": True,
                 "sql": sql,
-                "rows": rows,
+                "rows": rows
             },
-            ensure_ascii=False,
+            default=str
         )
 
-    except Exception as exc:
+    except Exception as error:
         return json.dumps(
             {
                 "success": False,
-                "error": str(exc),
-            },
-            ensure_ascii=False,
+                "error": str(error)
+            }
         )
 
+
+# ==================================================
+# OLLAMA TOOL DEFINITION
+# ==================================================
 
 TOOLS = [
     {
@@ -64,47 +68,71 @@ TOOLS = [
         "function": {
             "name": "run_business_query",
             "description": (
-                "Answer a business question by generating validated SQL "
-                "with the existing Text-to-SQL pipeline and querying "
-                "the Olist database. Pass the user's business question."
+                "Answer business questions using the Olist "
+                "e-commerce database. Use this tool for questions "
+                "about sales, customers, orders, products, reviews, "
+                "payments, and delivery."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "question": {
                         "type": "string",
-                        "description": "The business question to answer.",
+                        "description": (
+                            "The business question to answer "
+                            "using the database."
+                        )
                     }
                 },
-                "required": ["question"],
-            },
-        },
+                "required": ["question"]
+            }
+        }
     }
 ]
 
 
-def ask_analyst(question: str) -> str:
-    """Validate a question, execute the query, and format results deterministically."""
+# ==================================================
+# AI ANALYST
+# ==================================================
 
+def ask_analyst_response(question: str) -> dict:
+    """
+    Run the AI analyst and return structured response data.
+
+    Returns:
+        {
+            "answer": str,
+            "sql": str | None,
+            "rows": list
+        }
+    """
+
+    # Validate the user's question.
     is_valid, reason = validate_question(question)
 
     if not is_valid:
-        return reason
+        return {
+            "answer": reason,
+            "sql": None,
+            "rows": []
+        }
 
     messages = [
         {
             "role": "system",
             "content": (
-                "You are an AI data analyst for the Olist e-commerce database. "
-                "Call run_business_query to answer database questions. "
+                "You are an AI data analyst for the Olist "
+                "e-commerce database. "
+                "Use the run_business_query tool to answer "
+                "database-related questions. "
                 "Do not write SQL yourself. "
                 "Do not invent database results."
-            ),
+            )
         },
         {
             "role": "user",
-            "content": question,
-        },
+            "content": question
+        }
     ]
 
     for round_number in range(MAX_TOOL_ROUNDS):
@@ -113,13 +141,23 @@ def ask_analyst(question: str) -> str:
             model=MODEL,
             messages=messages,
             tools=TOOLS,
-            options={"temperature": 0},
+            options={
+                "temperature": 0
+            }
         )
 
         message = response.message
 
+        # No tool call was requested.
         if not message.tool_calls:
-            return message.content or "The model returned no answer."
+            return {
+                "answer": (
+                    message.content
+                    or "The model returned no answer."
+                ),
+                "sql": None,
+                "rows": []
+            }
 
         messages.append(message)
 
@@ -128,14 +166,24 @@ def ask_analyst(question: str) -> str:
             tool_name = tool_call.function.name
             arguments = tool_call.function.arguments
 
+            # Validate the requested tool.
             if tool_name != "run_business_query":
-                return (
-                    "The analyst requested an unknown tool. "
-                    "The query was not completed."
-                )
+                return {
+                    "answer": (
+                        "The analyst requested an unknown tool."
+                    ),
+                    "sql": None,
+                    "rows": []
+                }
 
             if not isinstance(arguments, dict):
-                return "The analyst supplied invalid tool arguments."
+                return {
+                    "answer": (
+                        "The analyst supplied invalid tool arguments."
+                    ),
+                    "sql": None,
+                    "rows": []
+                }
 
             tool_question = arguments.get("question")
 
@@ -143,53 +191,117 @@ def ask_analyst(question: str) -> str:
                 not isinstance(tool_question, str)
                 or not tool_question.strip()
             ):
-                return "The analyst supplied an empty or invalid business question."
+                return {
+                    "answer": (
+                        "The analyst supplied an invalid question."
+                    ),
+                    "sql": None,
+                    "rows": []
+                }
 
             print(f"\n--- TOOL ROUND {round_number + 1} ---")
             print("Business question:", tool_question)
 
+            # Execute the database query.
             raw_result = run_business_query(tool_question)
-            tool_result = json.loads(raw_result)
+
+            try:
+                tool_result = json.loads(raw_result)
+
+            except json.JSONDecodeError:
+                return {
+                    "answer": "Invalid response returned by the query tool.",
+                    "sql": None,
+                    "rows": []
+                }
 
             print(
                 "Tool result:",
-                json.dumps(tool_result, ensure_ascii=False),
+                json.dumps(
+                    tool_result,
+                    ensure_ascii=False
+                )
             )
 
+            # Handle query failures.
             if not tool_result.get("success"):
                 error = tool_result.get(
                     "error",
-                    "Unknown query error.",
+                    "Unknown query error."
                 )
 
-                return f"The query could not be completed. Reason: {error}"
+                return {
+                    "answer": (
+                        f"The query could not be completed. "
+                        f"Reason: {error}"
+                    ),
+                    "sql": None,
+                    "rows": []
+                }
 
-            # Python formats every successful database result.
-            rows = tool_result.get("rows")
+            rows = tool_result.get("rows", [])
+            sql = tool_result.get("sql")
 
             if not isinstance(rows, list):
-                return "The query returned an invalid result format."
+                return {
+                    "answer": "Invalid query result format.",
+                    "sql": sql,
+                    "rows": []
+                }
 
-            return format_answer(rows)
+            # Format the result using the existing formatter.
+            answer = format_answer(rows)
 
-    return "The analyst stopped after reaching the maximum tool-call rounds."
+            return {
+                "answer": answer,
+                "sql": sql,
+                "rows": rows
+            }
 
+    return {
+        "answer": (
+            "The analyst stopped after reaching "
+            "the maximum tool-call rounds."
+        ),
+        "sql": None,
+        "rows": []
+    }
+
+
+# ==================================================
+# BACKWARD-COMPATIBLE FUNCTION
+# ==================================================
+
+def ask_analyst(question: str) -> str:
+    """
+    Return only the answer text.
+
+    Preserves compatibility with existing tests and CLI usage.
+    """
+
+    response = ask_analyst_response(question)
+
+    return response["answer"]
+
+
+# ==================================================
+# COMMAND LINE INTERFACE
+# ==================================================
 
 def main():
-    question = input("Ask your Olist AI Analyst: ").strip()
 
-    if not question:
-        print("Please enter a business question.")
-        return
+    question = input(
+        "\nAsk your Olist business question: "
+    )
 
-    try:
-        answer = ask_analyst(question)
+    response = ask_analyst_response(question)
 
-        print("\n--- ANALYST ANSWER ---")
-        print(answer)
+    print("\n--- ANALYST ANSWER ---")
+    print(response["answer"])
 
-    except Exception as exc:
-        print(f"Analyst error: {exc}")
+    if response.get("sql"):
+        print("\n--- GENERATED SQL ---")
+        print(response["sql"])
 
 
 if __name__ == "__main__":

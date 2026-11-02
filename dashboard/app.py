@@ -4,6 +4,7 @@ import sys
 
 import plotly.express as px
 import plotly.graph_objects as go
+import pandas as pd
 import streamlit as st
 
 
@@ -27,7 +28,7 @@ from dashboard.queries import (
     get_review_distribution,
 )
 
-from src.analyst_agent import ask_analyst
+from src.analyst_agent import ask_analyst_response
 
 
 st.set_page_config(
@@ -280,6 +281,68 @@ def page_header(title, subtitle):
         """,
         unsafe_allow_html=True,
     )
+
+
+# ============================================================
+# AI ANALYST RESPONSE RENDERER
+# ============================================================
+
+def render_analyst_response(response):
+    """Render the AI answer, structured query results, and SQL."""
+
+    # Support older chat-history entries that stored plain strings.
+    if isinstance(response, str):
+        st.markdown(response)
+        return
+
+    if not isinstance(response, dict):
+        st.warning("The analyst returned an unexpected response format.")
+        return
+
+    answer = response.get("answer", "No answer returned.")
+    rows = response.get("rows", [])
+    sql = response.get("sql")
+
+    # Avoid displaying a long numbered list and the same data table twice.
+    if isinstance(rows, list) and len(rows) > 1:
+        st.markdown(f"**Query completed.** Returned {len(rows):,} rows.")
+    else:
+        st.markdown(answer)
+
+    if isinstance(rows, list) and rows:
+        df = pd.DataFrame(rows)
+
+        # Make database column names easier to read.
+        df.columns = [
+            str(column).replace("_", " ").strip().title()
+            for column in df.columns
+        ]
+
+        column_config = {}
+
+        for column in df.columns:
+            if pd.api.types.is_integer_dtype(df[column]):
+                column_config[column] = st.column_config.NumberColumn(
+                    column,
+                    format="localized",
+                )
+            elif pd.api.types.is_float_dtype(df[column]):
+                column_config[column] = st.column_config.NumberColumn(
+                    column,
+                    format="%.2f",
+                )
+
+        st.markdown("#### Query Results")
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config=column_config,
+        )
+
+    if sql:
+        with st.expander("View Generated SQL"):
+            st.code(sql, language="sql")
 
 
 # ============================================================
@@ -834,7 +897,10 @@ elif page == "AI Analyst":
     for message in st.session_state.chat_history:
 
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            if message["role"] == "assistant":
+                render_analyst_response(message["content"])
+            else:
+                st.markdown(message["content"])
 
     question = st.chat_input(
         "Ask about sales, customers, products or deliveries..."
@@ -860,17 +926,21 @@ elif page == "AI Analyst":
             with st.spinner("Analyzing your business question..."):
 
                 try:
-                    answer = ask_analyst(question)
+                    response = ask_analyst_response(question)
 
                 except Exception as exc:
-                    answer = f"Unable to complete the analysis: {exc}"
+                    response = {
+                        "answer": f"Unable to complete the analysis: {exc}",
+                        "sql": None,
+                        "rows": [],
+                    }
 
-                st.markdown(answer)
+            render_analyst_response(response)
 
         st.session_state.chat_history.append(
             {
                 "role": "assistant",
-                "content": answer,
+                "content": response,
             }
         )
 

@@ -61,55 +61,56 @@ messages = [
     }
 ]
 
-for round_number in range(MAX_TOOL_ROUNDS):
-    response = ollama.chat(
-        model=MODEL,
-        messages=messages,
-        tools=tools,
-        options={"temperature": 0},
-    )
+if __name__ == "__main__":
+    for round_number in range(MAX_TOOL_ROUNDS):
+        response = ollama.chat(
+            model=MODEL,
+            messages=messages,
+            tools=tools,
+            options={"temperature": 0},
+        )
 
-    message = response.message
-    messages.append(message)
+        message = response.message
+        messages.append(message)
 
-    if not message.tool_calls:
-        print("\n--- FINAL ANSWER ---")
-        print(message.content or "(No final answer returned.)")
-        break
+        if not message.tool_calls:
+            print("\n--- FINAL ANSWER ---")
+            print(message.content or "(No final answer returned.)")
+            break
 
-    for tool_call in message.tool_calls:
-        if tool_call.function.name != "run_business_query":
-            tool_result = json.dumps({
-                "success": False,
-                "error": "Unknown tool requested.",
-            })
-        else:
-            arguments = tool_call.function.arguments
-
-            if not isinstance(arguments, dict):
+        for tool_call in message.tool_calls:
+            if tool_call.function.name != "run_business_query":
                 tool_result = json.dumps({
                     "success": False,
-                    "error": "Tool arguments must be an object.",
-                })
-            elif not isinstance(arguments.get("sql"), str):
-                tool_result = json.dumps({
-                    "success": False,
-                    "error": "The sql argument must be a string.",
+                    "error": "Unknown tool requested.",
                 })
             else:
-                sql = arguments["sql"]
-                print(f"\n--- TOOL ROUND {round_number + 1} ---")
-                print("SQL:", sql)
+                arguments = tool_call.function.arguments
 
-                tool_result = run_business_query(sql)
+                if not isinstance(arguments, dict):
+                    tool_result = json.dumps({
+                        "success": False,
+                        "error": "Tool arguments must be an object.",
+                    })
+                elif not isinstance(arguments.get("sql"), str):
+                    tool_result = json.dumps({
+                        "success": False,
+                        "error": "The sql argument must be a string.",
+                    })
+                else:
+                    sql = arguments["sql"]
+                    print(f"\n--- TOOL ROUND {round_number + 1} ---")
+                    print("SQL:", sql)
 
-        print("Tool result:", tool_result)
+                    tool_result = run_business_query(sql)
 
-        messages.append({
-            "role": "tool",
-            "name": tool_call.function.name,
-            "content": tool_result,
-        })
+            print("Tool result:", tool_result)
 
-else:
-    print("\nStopped: maximum tool-call rounds reached.")
+            messages.append({
+                "role": "tool",
+                "name": tool_call.function.name,
+                "content": tool_result,
+            })
+
+    else:
+        print("\nStopped: maximum tool-call rounds reached.")

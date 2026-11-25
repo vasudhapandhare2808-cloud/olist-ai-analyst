@@ -5,11 +5,11 @@
         "sql_generation_success_rate": 100.0,
         "execution_successes": 45,
         "sql_execution_success_rate": 100.0,
-        "correct_results": 45,
-        "result_accuracy": 100.0,
-        "average_latency_seconds": 0.033,
-        "ordered_comparisons": 20,
-        "unordered_comparisons": 25
+        "correct_results": 44,
+        "result_accuracy": 97.78,
+        "average_latency_seconds": 0.034,
+        "ordered_comparisons": 21,
+        "unordered_comparisons": 24
     },
     "results": [
         {
@@ -21,7 +21,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.056,
+            "latency_seconds": 0.057,
             "actual_result": [
                 [
                     99441
@@ -43,7 +43,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.023,
+            "latency_seconds": 0.026,
             "actual_result": [
                 [
                     "delivered",
@@ -123,7 +123,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.022,
+            "latency_seconds": 0.023,
             "actual_result": [
                 [
                     97.02
@@ -223,7 +223,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.046,
+            "latency_seconds": 0.044,
             "actual_result": [
                 [
                     "bed_bath_table",
@@ -279,7 +279,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.02,
+            "latency_seconds": 0.019,
             "actual_result": [
                 [
                     32951
@@ -379,7 +379,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.02,
+            "latency_seconds": 0.019,
             "actual_result": [
                 [
                     "credit_card",
@@ -579,7 +579,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.027,
+            "latency_seconds": 0.026,
             "actual_result": [
                 [
                     "2016-09",
@@ -1065,7 +1065,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.041,
+            "latency_seconds": 0.043,
             "actual_result": [
                 [
                     "SP",
@@ -1161,7 +1161,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.07,
+            "latency_seconds": 0.069,
             "actual_result": [
                 [
                     2997
@@ -1183,7 +1183,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.064,
+            "latency_seconds": 0.068,
             "actual_result": [
                 [
                     1.0348089410589412
@@ -1205,7 +1205,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.034,
+            "latency_seconds": 0.035,
             "actual_result": [
                 [
                     "sao paulo",
@@ -1301,7 +1301,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.031,
+            "latency_seconds": 0.036,
             "actual_result": [
                 [
                     "SP",
@@ -1555,7 +1555,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.028,
+            "latency_seconds": 0.029,
             "actual_result": [
                 [
                     "bed_bath_table",
@@ -2257,7 +2257,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.053,
+            "latency_seconds": 0.052,
             "actual_result": [
                 [
                     "2016-09",
@@ -2553,7 +2553,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.032,
+            "latency_seconds": 0.031,
             "actual_result": [
                 [
                     137.75
@@ -2575,7 +2575,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.018,
+            "latency_seconds": 0.019,
             "actual_result": [
                 [
                     "4869f7a5dfa277a7dca6462dcf3b52b2",
@@ -2671,7 +2671,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.041,
+            "latency_seconds": 0.042,
             "actual_result": [
                 [
                     2016,
@@ -2863,7 +2863,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.043,
+            "latency_seconds": 0.045,
             "actual_result": [
                 [
                     "SP",
@@ -3095,7 +3095,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.044,
+            "latency_seconds": 0.045,
             "actual_result": [
                 [
                     "AL",
@@ -3220,6 +3220,10 @@
                     3.51
                 ],
                 [
+                    "boleto",
+                    1.0
+                ],
+                [
                     "voucher",
                     1.0
                 ],
@@ -3229,10 +3233,6 @@
                 ],
                 [
                     "not_defined",
-                    1.0
-                ],
-                [
-                    "boleto",
                     1.0
                 ]
             ],
@@ -3269,7 +3269,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.016,
+            "latency_seconds": 0.017,
             "actual_result": [
                 [
                     0,
@@ -3484,11 +3484,11 @@
                     4.17
                 ],
                 [
-                    "credit_card",
+                    "boleto",
                     4.09
                 ],
                 [
-                    "boleto",
+                    "credit_card",
                     4.09
                 ],
                 [
@@ -3781,7 +3781,7 @@
             "sql_generation_success": true,
             "execution_success": true,
             "result_correct": true,
-            "latency_seconds": 0.058,
+            "latency_seconds": 0.056,
             "actual_result": [
                 [
                     "6560211a19b47992c3666cc44a7e94c0",
@@ -3873,11 +3873,11 @@
             "category": "complex_joins",
             "question": "Which ten product categories have the highest average review scores?",
             "comparison_mode": "unordered",
-            "generated_sql": "WITH order_category AS (\n                SELECT DISTINCT\n                    i.order_id,\n                    t.product_category_name_english AS category\n                FROM olist_order_items_dataset i\n                JOIN olist_products_dataset p\n                    ON i.product_id = p.product_id\n                JOIN product_category_name_translation t\n                    ON p.product_category_name = t.product_category_name\n            )\n            SELECT\n                oc.category,\n                ROUND(AVG(r.review_score), 2)\n                    AS average_review_score\n            FROM order_category oc\n            JOIN olist_order_reviews_dataset r\n                ON oc.order_id = r.order_id\n            GROUP BY oc.category\n            ORDER BY AVG(r.review_score) DESC\n            LIMIT 10",
+            "generated_sql": "WITH order_category AS (\n                SELECT DISTINCT\n                    i.order_id,\n                    t.product_category_name_english AS category\n                FROM olist_order_items_dataset i\n                JOIN olist_products_dataset p\n                    ON i.product_id = p.product_id\n                JOIN product_category_name_translation t\n                    ON p.product_category_name = t.product_category_name\n            )\n            SELECT\n                oc.category,\n                ROUND(AVG(r.review_score), 2)\n                    AS average_review_score\n            FROM order_category oc\n            JOIN olist_order_reviews_dataset r\n                ON oc.order_id = r.order_id\n            GROUP BY oc.category\n            ORDER BY average_review_score DESC\n            LIMIT 10",
             "sql_generation_success": true,
             "execution_success": true,
-            "result_correct": true,
-            "latency_seconds": 0.063,
+            "result_correct": false,
+            "latency_seconds": 0.062,
             "actual_result": [
                 [
                     "cds_dvds_musicals",
@@ -3916,7 +3916,7 @@
                     4.32
                 ],
                 [
-                    "small_appliances_home_oven_and_coffee",
+                    "fashion_sport",
                     4.29
                 ]
             ],
